@@ -1,0 +1,4 @@
+export ST_AUTH=http://10.0.0.51:8080/auth/v1.0
+export ST_USER=demo:demo
+export ST_KEY=demo
+

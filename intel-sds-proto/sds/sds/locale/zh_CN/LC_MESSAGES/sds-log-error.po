@@ -1,0 +1,50 @@
+# Translations template for sds.
+# Copyright (C) 2014 ORGANIZATION
+# This file is distributed under the same license as the sds project.
+#
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: Sds\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2014-09-08 06:09+0000\n"
+"PO-Revision-Date: 2014-09-01 20:31+0000\n"
+"Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
+"Language-Team: Chinese (China) (http://www.transifex.com/projects/p/sds/"
+"language/zh_CN/)\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.3\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: sds/openstack/common/excutils.py:76
+#, python-format
+msgid "Original exception being dropped: %s"
+msgstr "正在删除原始异常：%s"
+
+#: sds/openstack/common/excutils.py:105
+#, python-format
+msgid "Unexpected exception occurred %d time(s)... retrying."
+msgstr "意外的异常已发生 %d 次...正在重试。"
+
+#: sds/openstack/common/periodic_task.py:202
+#, python-format
+msgid "Error during %(full_task_name)s: %(e)s"
+msgstr "在 %(full_task_name)s 期间发生错误：%(e)s"
+
+#: sds/openstack/common/policy.py:508
+#, python-format
+msgid "Failed to understand rule %s"
+msgstr "未能理解规则 %s"
+
+#: sds/openstack/common/policy.py:518
+#, python-format
+msgid "No handler for matches of kind %s"
+msgstr "对于类型为 %s 的匹配项，不存在任何处理程序"
+
+#: sds/openstack/common/policy.py:788
+#, python-format
+msgid "Failed to understand rule %r"
+msgstr "未能理解规则 %r "

@@ -1,0 +1,64 @@
+From a97c29c7fc7f6001e6408f52a93a3fb886984c49 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Wed, 14 Jan 2015 10:11:42 +0800
+Subject: [PATCH 2/2] Add UI of remove pools
+
+---
+ openstack_dashboard/api/sds.py                     |    4 ++++
+ .../dashboards/admin/composepool/tables.py         |   18 +++++++++++++++++-
+ 2 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/openstack_dashboard/api/sds.py b/openstack_dashboard/api/sds.py
+index 64907ae..bc0b72f 100644
+--- a/openstack_dashboard/api/sds.py
++++ b/openstack_dashboard/api/sds.py
+@@ -137,6 +137,10 @@ def storage_pools_create(request, pool, backend_name, backends,
+                                                    services=services)
+ 
+ 
++def storage_pools_delete(request, id):
++    return sdsclient(request).storage_pools.delete(id=id)
++
++
+ @memoized
+ def list_extensions(request):
+     return sds_list_extensions.ListExtManager(sdsclient(request))\
+diff --git a/openstack_dashboard/dashboards/admin/composepool/tables.py b/openstack_dashboard/dashboards/admin/composepool/tables.py
+index 0088c15..545358b 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/tables.py
++++ b/openstack_dashboard/dashboards/admin/composepool/tables.py
+@@ -19,7 +19,12 @@ from django.utils.translation import ugettext_lazy as _
+ from django.utils.translation import ungettext_lazy
+ 
+ from horizon import tables
+-from horizon.utils import filters
++
++from openstack_dashboard import api
++
++import logging
++
++LOG = logging.getLogger(__name__)
+ 
+ 
+ STATUS_DISPLAY_CHOICES = (
+@@ -81,6 +86,17 @@ class RemoveVirtualPool(tables.DeleteAction):
+             count
+         )
+ 
++    def allowed(self, request, pool=None):
++        print("^^allowed got called for request: %s, pool: %s" % (request, pool))
++        LOG.debug("^^^ allowed got called with pool: %s" % (pool))
++        return True
++
++    def delete(self, request, id):
++        print("^^^ delete got called for request: %s, id: %s" % (request, id))
++        LOG.debug("^^ request to delete id: %s" % (id))
++        api.sds.storage_pools_delete(request, id)
++
++
+ 
+ class ComposePoolTable(tables.DataTable):
+     
+-- 
+1.7.9.5
+

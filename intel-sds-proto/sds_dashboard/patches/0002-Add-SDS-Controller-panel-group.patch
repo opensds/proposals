@@ -1,0 +1,36 @@
+From e3420dcc85b143667ed6d3be44666abf9b6ddea0 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Mon, 15 Dec 2014 10:53:26 +0800
+Subject: [PATCH 2/5] Add SDS Controller panel group
+
+SDS Controller panel group be added under Admin, beside
+System panel group.
+---
+ openstack_dashboard/dashboards/admin/dashboard.py |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/openstack_dashboard/dashboards/admin/dashboard.py b/openstack_dashboard/dashboards/admin/dashboard.py
+index d594fab..f9e86de 100644
+--- a/openstack_dashboard/dashboards/admin/dashboard.py
++++ b/openstack_dashboard/dashboards/admin/dashboard.py
+@@ -25,10 +25,16 @@ class SystemPanels(horizon.PanelGroup):
+               'networks', 'routers', 'defaults', 'info')
+ 
+ 
++class SDSController(horizon.PanelGroup):
++    slug = "sdscontroller"
++    name = _("SDS Controller")
++    panels = ('provisioning', 'discovercapability', 'composepool',)
++
++
+ class Admin(horizon.Dashboard):
+     name = _("Admin")
+     slug = "admin"
+-    panels = (SystemPanels,)
++    panels = (SystemPanels, SDSController,)
+     default_panel = 'overview'
+     permissions = ('openstack.roles.admin',)
+ 
+-- 
+1.7.9.5
+

@@ -1,0 +1,203 @@
+Python bindings to the OpenStack SDS API
+===========================================
+
+This is a client for the OpenStack SDS API. There's a Python API (the
+``sdsclient`` module), and a command-line script (``sdsclient``). Each
+implements 100% of the OpenStack SDS API.
+
+Installation Steps
+==================
+
+Install SDS prototype client source code from git repo or unpack the tar file provided to you:
+a. Installing from Git repo:
+$ git clone <git repo>
+$ cd sds-prototype/python-sdsclient
+$ sudo python setup.py build
+$ sudo python setup.py install
+
+b. Installing from tar ball:
+$ tar -xzf <sds compressed tar>
+$ cd sds-prototype/python-sdsclient
+$ sudo python setup.py build
+$ sudo python setup.py install
+
+c. copy sdsclient to /usr/local/bin or /usr/bin
+$ sudo cp sds-prototype/python-sdsclient/scripts/sdsclient /usr/bin
+$ sudo chmod 755 /usr/bin/sdsclient
+
+
+Command-line API
+================
+
+Installing this package gets you a shell command, ``sdsclient``, that you
+can use to interact with any Rackspace compatible API (including OpenStack).
+
+You'll need to provide your OpenStack username and password. You can do this
+with the ``--os-username``, ``--os-password`` and  ``--os-tenant-name``
+params, but it's easier to just set them as environment variables::
+
+    export OS_USERNAME=openstack
+    export OS_PASSWORD=yadayada
+    export OS_TENANT_NAME=myproject
+
+You will also need to define the authentication url with ``--os-auth-url``
+and the version of the API with ``--os-sds-api-version``.  Or set them as
+environment variables as well::
+
+    export OS_AUTH_URL=http://example.com:8774/v1.1/
+    export OS_SDS_API_VERSION=1
+
+If you are using Keystone, you need to set the OS_AUTH_URL to the keystone
+endpoint::
+
+    export OS_AUTH_URL=http://example.com:5000/v1.0/
+
+Since Keystone can return multiple regions in the Service Catalog, you
+can specify the one you want with ``--os-region-name`` (or
+``export OS_REGION_NAME``). It defaults to the first in the list returned.
+
+You'll find complete documentation on the shell by running
+``sdsclient help``::
+
+usage: sds [--version] [--debug] [--os-auth-system <auth-system>]
+           [--service-type <service-type>] [--service-name <service-name>]
+           [--endpoint-type <endpoint-type>]
+           [--os-sds-api-version <sds-api-ver>] [--retries <retries>]
+           [--os-auth-strategy <auth-strategy>]
+           [--os-username <auth-user-name>] [--os-password <auth-password>]
+           [--os-tenant-name <auth-tenant-name>]
+           [--os-tenant-id <auth-tenant-id>] [--os-auth-url <auth-url>]
+           [--os-user-id <auth-user-id>]
+           [--os-user-domain-id <auth-user-domain-id>]
+           [--os-user-domain-name <auth-user-domain-name>]
+           [--os-project-id <auth-project-id>]
+           [--os-project-name <auth-project-name>]
+           [--os-project-domain-id <auth-project-domain-id>]
+           [--os-project-domain-name <auth-project-domain-name>]
+           [--os-cert <certificate>] [--os-key <key>]
+           [--os-region-name <region-name>] [--os-token <token>]
+           [--os-url <url>] [--os-cacert <ca-certificate>]
+           <subcommand> ...
+
+Command-line interface to the OpenStack Sds API.
+
+Positional arguments:
+  <subcommand>
+    backend-capability-keys-delete
+                        Delete storage capability for given keys.
+    backend-capability-set
+                        Set storage capability.
+    backend-capability-show
+                        Get storage capabilities.
+    backend-config-keys-delete
+                        Delete storage config for given keys.
+    backend-config-set  Set storage config.
+    backend-config-show
+                        Get storage config.
+    backend-create      Create a new storage backend.
+    backend-delete      Delete a storage backend.
+    backend-list        Print a list of storage backends.
+    backend-show        Get a storage backend.
+    backend-tier-capability-keys-delete
+                        Delete storage tier capabilities for given keys.
+    backend-tier-capability-set
+                        Set storage tier capabilities.
+    backend-tier-capability-show
+                        Get storage tier capabilities.
+    backend-tier-create
+                        Create a new storage tier.
+    backend-tier-delete
+                        Delete a storage tier.
+    backend-tier-list   List storage tiers.
+    backend-tier-show   Get a storage backend.
+    credentials         Shows user credentials returned from auth.
+    discover            Discover storage systems.
+    endpoints           Discovers endpoints registered by authentication
+                        service.
+    pool-create         Create a new storage backend.
+    pool-delete
+    pool-list           Print a list of storage pools.
+    service-disable     Disables the service.
+    service-enable      Enables the service.
+    service-list        Lists all services. Filter by host and service binary.
+    bash-completion     Prints arguments for bash_completion.
+    help                Shows help about this program or one of its
+                        subcommands.
+    list-extensions     Lists all available os-api extensions.
+
+Optional arguments:
+  --version             show program's version number and exit
+  --debug               Shows debugging output.
+  --os-auth-system <auth-system>
+                        Defaults to env[OS_AUTH_SYSTEM].
+  --service-type <service-type>
+                        Service type. For most actions, default is sds.
+  --service-name <service-name>
+                        Service name. Default=env[SDS_SERVICE_NAME].
+  --endpoint-type <endpoint-type>
+                        Endpoint type, which is publicURL or internalURL.
+                        Default=nova env[SDS_ENDPOINT_TYPE] or publicURL.
+  --os-sds-api-version <sds-api-ver>
+                        Block Storage API version. Valid values are 1 or 2.
+                        Default=env[OS_SDS_API_VERSION].
+  --retries <retries>   Number of retries.
+  --os-auth-strategy <auth-strategy>
+                        Authentication strategy (Env: OS_AUTH_STRATEGY,
+                        default keystone). For now, any other value will
+                        disable the authentication
+  --os-username <auth-user-name>
+                        OpenStack user name. Default=env[OS_USERNAME].
+  --os-password <auth-password>
+                        Password for OpenStack user. Default=env[OS_PASSWORD].
+  --os-tenant-name <auth-tenant-name>
+                        Tenant name. Default=env[OS_TENANT_NAME].
+  --os-tenant-id <auth-tenant-id>
+                        ID for the tenant. Default=env[OS_TENANT_ID].
+  --os-auth-url <auth-url>
+                        URL for the authentication service.
+                        Default=env[OS_AUTH_URL].
+  --os-user-id <auth-user-id>
+                        Authentication user ID (Env: OS_USER_ID)
+  --os-user-domain-id <auth-user-domain-id>
+                        OpenStack user domain ID. Defaults to
+                        env[OS_USER_DOMAIN_ID].
+  --os-user-domain-name <auth-user-domain-name>
+                        OpenStack user domain name. Defaults to
+                        env[OS_USER_DOMAIN_NAME].
+  --os-project-id <auth-project-id>
+                        Another way to specify tenant ID. This option is
+                        mutually exclusive with --os-tenant-id. Defaults to
+                        env[OS_PROJECT_ID].
+  --os-project-name <auth-project-name>
+                        Another way to specify tenant name. This option is
+                        mutually exclusive with --os-tenant-name. Defaults to
+                        env[OS_PROJECT_NAME].
+  --os-project-domain-id <auth-project-domain-id>
+                        Defaults to env[OS_PROJECT_DOMAIN_ID].
+  --os-project-domain-name <auth-project-domain-name>
+                        Defaults to env[OS_PROJECT_DOMAIN_NAME].
+  --os-cert <certificate>
+                        Defaults to env[OS_CERT].
+  --os-key <key>        Defaults to env[OS_KEY].
+  --os-region-name <region-name>
+                        Region name. Default=env[OS_REGION_NAME].
+  --os-token <token>    Defaults to env[OS_TOKEN]
+  --os-url <url>        Defaults to env[OS_URL]
+  --os-cacert <ca-certificate>
+                        Specify a CA bundle file to use in verifying a TLS
+                        (https) server certificate. Defaults to env[OS_CACERT]
+
+Run "sds help SUBCOMMAND" for help on a subcommand.
+
+Python API
+==========
+
+There's also a complete Python API, but it has not yet been documented.
+
+Quick-start using keystone::
+
+    # use v1.0 auth with http://example.com:5000/v1.0/")
+    >>> from sdsclient.v1 import client
+    >>> nt = client.Client(USER, PASS, TENANT, AUTH_URL, service_type="sds")
+    >>> nt.sds.list()
+    [...]

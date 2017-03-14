@@ -1,0 +1,25 @@
+[oslo.messaging.notify.drivers]
+sds.openstack.common.notifier.rpc_notifier2 = oslo.messaging.notify._impl_messaging:MessagingV2Driver
+sds.openstack.common.notifier.log_notifier = oslo.messaging.notify._impl_log:LogDriver
+sds.openstack.common.notifier.rpc_notifier = oslo.messaging.notify._impl_messaging:MessagingDriver
+sds.openstack.common.notifier.test_notifier = oslo.messaging.notify._impl_test:TestDriver
+sds.openstack.common.notifier.no_op_notifier = oslo.messaging.notify._impl_noop:NoOpDriver
+
+[sds.scheduler.filters]
+CapabilitiesFilter = sds.openstack.common.scheduler.filters.capabilities_filter:CapabilitiesFilter
+JsonFilter = sds.openstack.common.scheduler.filters.json_filter:JsonFilter
+DifferentBackendFilter = sds.scheduler.filters.affinity_filter:DifferentBackendFilter
+SameBackendFilter = sds.scheduler.filters.affinity_filter:SameBackendFilter
+AvailabilityZoneFilter = sds.openstack.common.scheduler.filters.availability_zone_filter:AvailabilityZoneFilter
+CapacityFilter = sds.scheduler.filters.capacity_filter:CapacityFilter
+RetryFilter = sds.openstack.common.scheduler.filters.ignore_attempted_hosts_filter:IgnoreAttemptedHostsFilter
+
+[console_scripts]
+sds-rootwrap = oslo.rootwrap.cmd:main
+
+[sds.scheduler.weights]
+ChanceWeigher = sds.scheduler.weights.chance:ChanceWeigher
+VolumeNumberWeigher = sds.scheduler.weights.volume_number:VolumeNumberWeigher
+CapacityWeigher = sds.scheduler.weights.capacity:CapacityWeigher
+AllocatedCapacityWeigher = sds.scheduler.weights.capacity:AllocatedCapacityWeigher
+

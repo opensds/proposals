@@ -1,0 +1,1167 @@
+From ab0972d1384767667d1e5e315c1e6a9861c6b235 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Mon, 15 Dec 2014 13:26:26 +0800
+Subject: [PATCH 4/5] Create storage system provisioning UI
+
+---
+ .../dashboards/admin/provisioning/panel.py         |   32 ++
+ .../dashboards/admin/provisioning/tables.py        |  214 +++++++++
+ .../templates/provisioning/_serverremove.html      |   12 +
+ .../templates/provisioning/_serversaction.html     |   14 +
+ .../provisioning/templates/provisioning/index.html |   17 +
+ .../templates/provisioning/serverremove.html       |   11 +
+ .../templates/provisioning/serversaction.html      |   11 +
+ .../dashboards/admin/provisioning/urls.py          |   32 ++
+ .../dashboards/admin/provisioning/views.py         |  120 +++++
+ openstack_dashboard/static/dashboard/js/json2.js   |  490 ++++++++++++++++++++
+ .../static/dashboard/js/servermgmt.js              |  108 +++++
+ 11 files changed, 1061 insertions(+)
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/__init__.py
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/panel.py
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/tables.py
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serverremove.html
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serversaction.html
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/index.html
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serverremove.html
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serversaction.html
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/urls.py
+ create mode 100644 openstack_dashboard/dashboards/admin/provisioning/views.py
+ create mode 100644 openstack_dashboard/static/dashboard/js/json2.js
+ create mode 100644 openstack_dashboard/static/dashboard/js/servermgmt.js
+
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/__init__.py b/openstack_dashboard/dashboards/admin/provisioning/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/panel.py b/openstack_dashboard/dashboards/admin/provisioning/panel.py
+new file mode 100644
+index 0000000..b1d6632
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/panel.py
+@@ -0,0 +1,32 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.utils.translation import ugettext_lazy as _
++
++import horizon
++
++from openstack_dashboard.dashboards.admin import dashboard
++
++
++class Provisioning(horizon.Panel):
++    name = _("Provisioning")
++    slug = 'provisioning'
++    permissions = ('openstack.roles.admin',)
++
++
++dashboard.Admin.register(Provisioning)
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/tables.py b/openstack_dashboard/dashboards/admin/provisioning/tables.py
+new file mode 100644
+index 0000000..ae6858d
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/tables.py
+@@ -0,0 +1,214 @@
++# Copyright 2012 OpenStack Foundation
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.template.defaultfilters import title  # noqa
++from django.utils.translation import pgettext_lazy
++from django.utils.translation import ugettext_lazy as _
++from django import forms
++
++from horizon import tables
++from horizon.utils import filters
++
++from openstack_dashboard import api
++
++
++STATUS_DISPLAY_CHOICES = (
++    ("active", pgettext_lazy("Current status of storage system", u"Active")),
++    ("available", pgettext_lazy("Current status of storage system", u"Available")),
++    ("error", pgettext_lazy("Current status of storage system", u"Error")),)
++
++
++STATUS_CHOICES = (("active", True), ("available", True), ("error", False),
++    )
++
++def empty_value_maker(type, name, value, attrs=None):
++    def _empty_value_caller(datum):
++        if type == "text":
++            widget = forms.TextInput()
++        elif type == "choice":
++            widget = forms.ChoiceField().widget
++        elif type == "checkbox":
++            widget = forms.CheckboxInput()
++        data = dict(name=name, value=value)
++
++        if attrs:
++            data.update(dict(attrs=attrs))
++        data = widget.render(**data)
++        return data
++    return _empty_value_caller
++
++
++class UpdateRow(tables.Row):
++    ajax = True
++
++    def get_data(self, request, id):
++        return api.vsm.get_server(request, id)
++
++
++class ProvisioningFilterAction(tables.FilterAction):
++
++    name = "filter_provisioning"
++    filter_type = "server"
++    filter_choices = (('name', _("Name"), True),
++                      ('id', _("ID"), False),
++                      ('ip', _("IP Address ="), True),
++                      ('datadriver', _("Data Drivers ="), True),
++                      ('status', _("Status ="), True))
++
++    def filter(self, table, data, filter_string):
++        """Server side search.
++        When filtering is supported in the api, then we will handle in view
++        """
++        filter_field = table.get_filter_field()
++        if filter_field == 'Name' and filter_string:
++            return [_data for _data in data
++                    if data.name == filter_string]
++        return data
++
++
++class AddServersAction(tables.LinkAction):
++    name = "add servers"
++    verbose_name = _("Add Servers")
++    url = "horizon:admin:provisioning:addserversview"
++    classes = ("ajax-modal", "btn-create")
++    icon = "plus"
++
++
++class RemoveServersAction(tables.LinkAction):
++    name = "remove servers"
++    verbose_name = _("Remove Servers")
++    url = "horizon:admin:provisioning:removeserversview"
++    classes = ("ajax-modal", "btn-create")
++
++
++class ProvisioningTable(tables.DataTable):
++
++    storagesystem = tables.Column("storagesystem",
++                                  verbose_name=_("Storage System"))
++    name = tables.Column("host",
++                         verbose_name=_("Name"))
++    ip = tables.Column("primary_public_ip",
++                       verbose_name=_("IP Address"),
++                       attrs={'data-type': "ip"})
++    
++    datadriver = tables.Column("osds", verbose_name=_("Data Drivers"))
++
++    status = tables.Column(
++        "status",
++        filters=(title, filters.replace_underscores),
++        verbose_name=_("Status"),
++        status=True,
++        status_choices=STATUS_CHOICES,
++        display_choices=STATUS_DISPLAY_CHOICES)
++
++    class Meta:
++        name = "provisioning"
++        verbose_name = _("Provisioning")
++        status_columns = ["status"]
++        table_actions = (AddServersAction, RemoveServersAction,)
++        row_class = UpdateRow
++
++
++class Ad(tables.LinkAction):
++    name = "add"
++    verbose_name = _(" ")
++    url = "horizon:admin:provisioning:addserversview"
++
++
++class AddServerTable(tables.DataTable):
++
++    id = tables.Column("id",
++                         verbose_name=_("ID"), classes=("server_id",))
++
++    storagesystem = tables.Column("storagesystem",
++                                  verbose_name=_("Storage System"))
++    name = tables.Column("host",
++                         verbose_name=_("Name"), classes=("name",))
++    ip = tables.Column("primary_public_ip",
++                       verbose_name=_("IP Address"),
++                       attrs={'data-type': "ip"}, classes=("ip",))
++
++    is_monitor = tables.Column("is_monitor", verbose_name=_("Monitor"),
++                  classes=('monitor',),
++                   empty_value=empty_value_maker("checkbox","is_monitor",""))
++
++    is_storage = tables.Column("is_storage", verbose_name=_("Storage"),
++                               classes=('storage',), \
++            empty_value=empty_value_maker("checkbox","is_storage",1), hidden=True)
++
++    zone = tables.Column("zone_id", verbose_name=_("Zone"), classes=('zone',))
++ 
++    datadriver = tables.Column("osds", verbose_name=_("Data Drivers(OSDs)"),
++                               classes=("datadriver",))
++
++    status = tables.Column(
++        "status",
++        filters=(title, filters.replace_underscores),
++        verbose_name=_("Status"),
++        status=True,
++        status_choices=STATUS_CHOICES,
++        display_choices=STATUS_DISPLAY_CHOICES,
++        classes=("status",))
++
++    class Meta:
++        name = "serversaction"
++        verbose_name = _("Servers")
++        multi_select = True
++        status_columns = ["status"]
++        table_actions = (Ad,)
++
++
++class RemoveServerTable(tables.DataTable):
++
++    server_id = tables.Column("id", verbose_name=_("ID"), classes=("server_id",))
++    storagesystem = tables.Column("storagesystem",
++                                  verbose_name=_("Storage System"))
++
++    name = tables.Column("host", classes=("name",), verbose_name="Name")
++
++    ip = tables.Column("primary_public_ip",
++                       verbose_name=_("IP Address"),
++                       attrs={'data-type': "ip"}, classes=("ip",))
++
++    zone = tables.Column("zone_id", verbose_name=_("Zone"), classes=('zone',))
++    
++    osds = tables.Column("osds", verbose_name=_("Data Drivers(OSDs)"),
++                         classes=("datadriver",))
++
++    role = tables.Column("type", classes=("role",),
++                               verbose_name=_("Role"))
++
++    remove_storage = tables.Column("remove_storage", verbose_name=_("Storage"),
++                                   classes=('remove_storage',), empty_value=\
++                                   empty_value_maker("checkbox",
++                                                     "remove_storage",True),
++                                   hidden=True)
++
++    status = tables.Column(
++        "status",
++        filters=(title, filters.replace_underscores),
++        verbose_name=_("Status"),
++        status=True,
++        status_choices=STATUS_CHOICES,
++        display_choices=STATUS_DISPLAY_CHOICES,
++        classes=("status",))
++
++    class Meta:
++        name = "serversaction"
++        verbose_name = _("Servers")
++        multi_select = True
++        status_columns = ["status"]
++        table_actions = (Ad,)
++
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serverremove.html b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serverremove.html
+new file mode 100644
+index 0000000..660dfe4
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serverremove.html
+@@ -0,0 +1,12 @@
++
++{% extends "horizon/common/_modal_form.html" %}
++{% load i18n %}
++
++{% block form_action %}{% url 'horizon:admin:provisioning:index' %}{% endblock %}
++
++{% block modal-header %}{% trans "Remove Servers" %}{% endblock %}
++
++{% block modal-footer %}
++  <input class="btn btn-primary pull-right " type="button" value="{% trans "Remove Servers" %}" onclick="remove_servers();" />
++  <a href="{{ submit_btn.failed_url }}" class="btn btn-default secondary cancel close">{% trans "Cancel" %}</a>
++{% endblock %}
+\ No newline at end of file
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serversaction.html b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serversaction.html
+new file mode 100644
+index 0000000..485a0b8
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/_serversaction.html
+@@ -0,0 +1,14 @@
++{% extends "horizon/common/_modal_form.html" %}
++{% load i18n %}
++
++{% block form_action %}{% url 'horizon:admin:provisioning:index' %}{% endblock %}
++
++{% block modal-header %}{% trans "Add Servers" %}{% endblock %}
++
++{% block modal-footer %}
++  <input class="btn btn-primary pull-right " type="button" value="{% trans "Add Servers" %}" onclick="post_data();" />
++  <a href="{{ submit_btn.failed_url }}" class="btn btn-default secondary cancel close">{% trans "Cancel" %}</a>
++{% endblock %}
++
++
++
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/index.html b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/index.html
+new file mode 100644
+index 0000000..14f09b2
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/index.html
+@@ -0,0 +1,17 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Provisioning" %}{% endblock %}
++
++{% block page_header %}
++  {% include "horizon/common/_page_header.html" with title=_("Provisioning Storage System") %}
++{% endblock page_header %}
++
++{% block main %}
++    {{ table.render }}
++{% endblock %}
++
++{% block js %}
++    {{ block.super }}
++    <script src='{{ STATIC_URL }}dashboard/js/json2.js' type='text/javascript' charset='utf-8'></script>
++    <script src='{{ STATIC_URL }}dashboard/js/servermgmt.js' type='text/javascript' charset='utf-8'></script>
++{% endblock %}
+\ No newline at end of file
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serverremove.html b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serverremove.html
+new file mode 100644
+index 0000000..b7b6535
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serverremove.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Remove Servers" %}{% endblock %}
++
++{% block page_header %}
++    {% include "horizon/common/_page_header.html" with title=_("Remove Servers") %}
++{% endblock page_header %}
++
++{% block main %}
++    {% include 'admin/provisioning/_serverremove.html' %}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serversaction.html b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serversaction.html
+new file mode 100644
+index 0000000..1f98a12
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/templates/provisioning/serversaction.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Add Servers" %}{% endblock %}
++
++{% block page_header %}
++    {% include "horizon/common/_page_header.html" with title=_("Add Servers") %}
++{% endblock page_header %}
++
++{% block main %}
++    {% include 'admin/provisioning/_serversaction.html' %}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/urls.py b/openstack_dashboard/dashboards/admin/provisioning/urls.py
+new file mode 100644
+index 0000000..e3987fc
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/urls.py
+@@ -0,0 +1,32 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.conf.urls import patterns
++from django.conf.urls import url
++
++from openstack_dashboard.dashboards.admin.provisioning import views
++
++
++urlpatterns = patterns('openstack_dashboard.dashboards.admin.provisioning.views',
++    url(r'^$', views.IndexView.as_view(), name='index'),
++    url(r'^addserversview$', views.AddServersView.as_view(),
++        name='addserversview'),
++    url(r'^removeserversview$', views.RemoveServersView.as_view(),
++        name='removeserversview'),
++	url(r'^servers/(?P<action>\w+)$', views.ServersAction, name='serversaction'),
++)
+diff --git a/openstack_dashboard/dashboards/admin/provisioning/views.py b/openstack_dashboard/dashboards/admin/provisioning/views.py
+new file mode 100644
+index 0000000..c6ca3ad
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/provisioning/views.py
+@@ -0,0 +1,120 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 OpenStack Foundation
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++import logging
++import os
++import json
++
++from django.http import HttpResponse
++
++from horizon import tables
++
++from openstack_dashboard import api
++from openstack_dashboard.dashboards.admin.provisioning \
++    import tables as project_tables
++
++LOG = logging.getLogger(__name__)
++
++
++class ModalEditTableMixin(object):
++
++    def get_template_names(self):
++        if self.request.is_ajax():
++            if not hasattr(self, "ajax_template_name"):
++                # Transform standard template name to ajax name (leading "_")
++                bits = list(os.path.split(self.template_name))
++                bits[1] = "".join(("_", bits[1]))
++                self.ajax_template_name = os.path.join(*bits)
++            template = self.ajax_template_name
++        else:
++            template = self.template_name
++        return template
++
++    def get_context_data(self, **kwargs):
++        context = super(ModalEditTableMixin, self).get_context_data(**kwargs)
++        context['verbose_name'] = getattr(self, "verbose_name", "")
++        context['submit_btn'] = getattr(self, "submit_btn", {})
++        if self.request.is_ajax():
++            context['hide'] = True
++        return context
++
++
++class AddServersView(ModalEditTableMixin, tables.DataTableView):
++    table_class = project_tables.AddServerTable
++    template_name = 'admin/provisioning/serversaction.html'
++
++    def get_data(self):
++        ret = []
++        servers = api.vsm.get_server_list(self.request)
++        for _server in servers:
++            if _server.status in ['available', 'Available']:
++                ret.append(_server)
++        return ret
++
++
++class RemoveServersView(ModalEditTableMixin, tables.DataTableView):
++    table_class = project_tables.RemoveServerTable
++    template_name = 'admin/provisioning/serverremove.html'
++
++    def get_data(self):
++        ret = []
++        servers = api.vsm.get_server_list(self.request)
++        for _server in servers:
++            if _server.status in ['active', 'Active']:
++                ret.append(_server)
++        return ret
++
++
++def ServersAction(request, action):
++    
++    post_data = request.body
++
++    if not len(post_data):
++        status = "error"
++        msg = "No server selected"
++    else:
++        if action == "add":
++            api.vsm.add_servers(request, json.loads(post_data))
++            status = "info"
++            msg = "Began to add servers"
++        elif action == "remove":
++            api.vsm.remove_servers(request, json.loads(post_data))
++            status = "info"
++            msg = "Began to remove servers"
++
++    resp = dict(message=msg, status=status, data="")
++    resp = json.dumps(resp)
++    return HttpResponse(resp)
++
++
++class IndexView(tables.DataTableView):
++    table_class = project_tables.ProvisioningTable
++    template_name = 'admin/provisioning/index.html'
++
++    def get_data(self):
++        return api.vsm.get_server_list(self.request)
++
++    def get_filters(self, filters):
++        filter_field = self.table.get_filter_field()
++        filter_action = self.table._meta._filter_action
++        if filter_action.is_api_filter(filter_field):
++            filter_string = self.table.get_filter_string()
++            if filter_field and filter_string:
++                filters[filter_field] = filter_string
++        return filters
+diff --git a/openstack_dashboard/static/dashboard/js/json2.js b/openstack_dashboard/static/dashboard/js/json2.js
+new file mode 100644
+index 0000000..5c02d4b
+--- /dev/null
++++ b/openstack_dashboard/static/dashboard/js/json2.js
+@@ -0,0 +1,490 @@
++/*
++    json2.js
++    2014-02-04
++
++    Public Domain.
++
++    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
++
++    See http://www.JSON.org/js.html
++
++
++    This code should be minified before deployment.
++    See http://javascript.crockford.com/jsmin.html
++
++    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
++    NOT CONTROL.
++
++
++    This file creates a global JSON object containing two methods: stringify
++    and parse.
++
++        JSON.stringify(value, replacer, space)
++            value       any JavaScript value, usually an object or array.
++
++            replacer    an optional parameter that determines how object
++                        values are stringified for objects. It can be a
++                        function or an array of strings.
++
++            space       an optional parameter that specifies the indentation
++                        of nested structures. If it is omitted, the text will
++                        be packed without extra whitespace. If it is a number,
++                        it will specify the number of spaces to indent at each
++                        level. If it is a string (such as '\t' or '&nbsp;'),
++                        it contains the characters used to indent at each level.
++
++            This method produces a JSON text from a JavaScript value.
++
++            When an object value is found, if the object contains a toJSON
++            method, its toJSON method will be called and the result will be
++            stringified. A toJSON method does not serialize: it returns the
++            value represented by the name/value pair that should be serialized,
++            or undefined if nothing should be serialized. The toJSON method
++            will be passed the key associated with the value, and this will be
++            bound to the value
++
++            For example, this would serialize Dates as ISO strings.
++
++                Date.prototype.toJSON = function (key) {
++                    function f(n) {
++                        // Format integers to have at least two digits.
++                        return n < 10 ? '0' + n : n;
++                    }
++
++                    return this.getUTCFullYear()   + '-' +
++                         f(this.getUTCMonth() + 1) + '-' +
++                         f(this.getUTCDate())      + 'T' +
++                         f(this.getUTCHours())     + ':' +
++                         f(this.getUTCMinutes())   + ':' +
++                         f(this.getUTCSeconds())   + 'Z';
++                };
++
++            You can provide an optional replacer method. It will be passed the
++            key and value of each member, with this bound to the containing
++            object. The value that is returned from your method will be
++            serialized. If your method returns undefined, then the member will
++            be excluded from the serialization.
++
++            If the replacer parameter is an array of strings, then it will be
++            used to select the members to be serialized. It filters the results
++            such that only members with keys listed in the replacer array are
++            stringified.
++
++            Values that do not have JSON representations, such as undefined or
++            functions, will not be serialized. Such values in objects will be
++            dropped; in arrays they will be replaced with null. You can use
++            a replacer function to replace those with JSON values.
++            JSON.stringify(undefined) returns undefined.
++
++            The optional space parameter produces a stringification of the
++            value that is filled with line breaks and indentation to make it
++            easier to read.
++
++            If the space parameter is a non-empty string, then that string will
++            be used for indentation. If the space parameter is a number, then
++            the indentation will be that many spaces.
++
++            Example:
++
++            text = JSON.stringify(['e', {pluribus: 'unum'}]);
++            // text is '["e",{"pluribus":"unum"}]'
++
++
++            text = JSON.stringify(['e', {pluribus: 'unum'}], null, '\t');
++            // text is '[\n\t"e",\n\t{\n\t\t"pluribus": "unum"\n\t}\n]'
++
++            text = JSON.stringify([new Date()], function (key, value) {
++                return this[key] instanceof Date ?
++                    'Date(' + this[key] + ')' : value;
++            });
++            // text is '["Date(---current time---)"]'
++
++
++        JSON.parse(text, reviver)
++            This method parses a JSON text to produce an object or array.
++            It can throw a SyntaxError exception.
++
++            The optional reviver parameter is a function that can filter and
++            transform the results. It receives each of the keys and values,
++            and its return value is used instead of the original value.
++            If it returns what it received, then the structure is not modified.
++            If it returns undefined then the member is deleted.
++
++            Example:
++
++            // Parse the text. Values that look like ISO date strings will
++            // be converted to Date objects.
++
++            myData = JSON.parse(text, function (key, value) {
++                var a;
++                if (typeof value === 'string') {
++                    a =
++/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
++                    if (a) {
++                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
++                            +a[5], +a[6]));
++                    }
++                }
++                return value;
++            });
++
++            myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
++                var d;
++                if (typeof value === 'string' &&
++                        value.slice(0, 5) === 'Date(' &&
++                        value.slice(-1) === ')') {
++                    d = new Date(value.slice(5, -1));
++                    if (d) {
++                        return d;
++                    }
++                }
++                return value;
++            });
++
++
++    This is a reference implementation. You are free to copy, modify, or
++    redistribute.
++*/
++
++/*jslint evil: true, regexp: true */
++
++/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
++    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
++    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
++    lastIndex, length, parse, prototype, push, replace, slice, stringify,
++    test, toJSON, toString, valueOf
++*/
++
++
++// Create a JSON object only if one does not already exist. We create the
++// methods in a closure to avoid creating global variables.
++
++if (typeof JSON !== 'object') {
++    JSON = {};
++}
++
++(function () {
++    'use strict';
++
++    function f(n) {
++        // Format integers to have at least two digits.
++        return n < 10 ? '0' + n : n;
++    }
++
++    if (typeof Date.prototype.toJSON !== 'function') {
++
++        Date.prototype.toJSON = function () {
++
++            return isFinite(this.valueOf())
++                ? this.getUTCFullYear()     + '-' +
++                    f(this.getUTCMonth() + 1) + '-' +
++                    f(this.getUTCDate())      + 'T' +
++                    f(this.getUTCHours())     + ':' +
++                    f(this.getUTCMinutes())   + ':' +
++                    f(this.getUTCSeconds())   + 'Z'
++                : null;
++        };
++
++        String.prototype.toJSON      =
++            Number.prototype.toJSON  =
++            Boolean.prototype.toJSON = function () {
++                return this.valueOf();
++            };
++    }
++
++    var cx,
++        escapable,
++        gap,
++        indent,
++        meta,
++        rep;
++
++
++    function quote(string) {
++
++// If the string contains no control characters, no quote characters, and no
++// backslash characters, then we can safely slap some quotes around it.
++// Otherwise we must also replace the offending characters with safe escape
++// sequences.
++
++        escapable.lastIndex = 0;
++        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
++            var c = meta[a];
++            return typeof c === 'string'
++                ? c
++                : '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
++        }) + '"' : '"' + string + '"';
++    }
++
++
++    function str(key, holder) {
++
++// Produce a string from holder[key].
++
++        var i,          // The loop counter.
++            k,          // The member key.
++            v,          // The member value.
++            length,
++            mind = gap,
++            partial,
++            value = holder[key];
++
++// If the value has a toJSON method, call it to obtain a replacement value.
++
++        if (value && typeof value === 'object' &&
++                typeof value.toJSON === 'function') {
++            value = value.toJSON(key);
++        }
++
++// If we were called with a replacer function, then call the replacer to
++// obtain a replacement value.
++
++        if (typeof rep === 'function') {
++            value = rep.call(holder, key, value);
++        }
++
++// What happens next depends on the value's type.
++
++        switch (typeof value) {
++        case 'string':
++            return quote(value);
++
++        case 'number':
++
++// JSON numbers must be finite. Encode non-finite numbers as null.
++
++            return isFinite(value) ? String(value) : 'null';
++
++        case 'boolean':
++        case 'null':
++
++// If the value is a boolean or null, convert it to a string. Note:
++// typeof null does not produce 'null'. The case is included here in
++// the remote chance that this gets fixed someday.
++
++            return String(value);
++
++// If the type is 'object', we might be dealing with an object or an array or
++// null.
++
++        case 'object':
++
++// Due to a specification blunder in ECMAScript, typeof null is 'object',
++// so watch out for that case.
++
++            if (!value) {
++                return 'null';
++            }
++
++// Make an array to hold the partial results of stringifying this object value.
++
++            gap += indent;
++            partial = [];
++
++// Is the value an array?
++
++            if (Object.prototype.toString.apply(value) === '[object Array]') {
++
++// The value is an array. Stringify every element. Use null as a placeholder
++// for non-JSON values.
++
++                length = value.length;
++                for (i = 0; i < length; i += 1) {
++                    partial[i] = str(i, value) || 'null';
++                }
++
++// Join all of the elements together, separated with commas, and wrap them in
++// brackets.
++
++                v = partial.length === 0
++                    ? '[]'
++                    : gap
++                    ? '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']'
++                    : '[' + partial.join(',') + ']';
++                gap = mind;
++                return v;
++            }
++
++// If the replacer is an array, use it to select the members to be stringified.
++
++            if (rep && typeof rep === 'object') {
++                length = rep.length;
++                for (i = 0; i < length; i += 1) {
++                    if (typeof rep[i] === 'string') {
++                        k = rep[i];
++                        v = str(k, value);
++                        if (v) {
++                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
++                        }
++                    }
++                }
++            } else {
++
++// Otherwise, iterate through all of the keys in the object.
++
++                for (k in value) {
++                    if (Object.prototype.hasOwnProperty.call(value, k)) {
++                        v = str(k, value);
++                        if (v) {
++                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
++                        }
++                    }
++                }
++            }
++
++// Join all of the member texts together, separated with commas,
++// and wrap them in braces.
++
++            v = partial.length === 0
++                ? '{}'
++                : gap
++                ? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}'
++                : '{' + partial.join(',') + '}';
++            gap = mind;
++            return v;
++        }
++    }
++
++// If the JSON object does not yet have a stringify method, give it one.
++
++    if (typeof JSON.stringify !== 'function') {
++        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
++        meta = {    // table of character substitutions
++            '\b': '\\b',
++            '\t': '\\t',
++            '\n': '\\n',
++            '\f': '\\f',
++            '\r': '\\r',
++            '"' : '\\"',
++            '\\': '\\\\'
++        };
++        JSON.stringify = function (value, replacer, space) {
++
++// The stringify method takes a value and an optional replacer, and an optional
++// space parameter, and returns a JSON text. The replacer can be a function
++// that can replace values, or an array of strings that will select the keys.
++// A default replacer method can be provided. Use of the space parameter can
++// produce text that is more easily readable.
++
++            var i;
++            gap = '';
++            indent = '';
++
++// If the space parameter is a number, make an indent string containing that
++// many spaces.
++
++            if (typeof space === 'number') {
++                for (i = 0; i < space; i += 1) {
++                    indent += ' ';
++                }
++
++// If the space parameter is a string, it will be used as the indent string.
++
++            } else if (typeof space === 'string') {
++                indent = space;
++            }
++
++// If there is a replacer, it must be a function or an array.
++// Otherwise, throw an error.
++
++            rep = replacer;
++            if (replacer && typeof replacer !== 'function' &&
++                    (typeof replacer !== 'object' ||
++                    typeof replacer.length !== 'number')) {
++                throw new Error('JSON.stringify');
++            }
++
++// Make a fake root object containing our value under the key of ''.
++// Return the result of stringifying the value.
++
++            return str('', {'': value});
++        };
++    }
++
++
++// If the JSON object does not yet have a parse method, give it one.
++
++    if (typeof JSON.parse !== 'function') {
++        cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
++        JSON.parse = function (text, reviver) {
++
++// The parse method takes a text and an optional reviver function, and returns
++// a JavaScript value if the text is a valid JSON text.
++
++            var j;
++
++            function walk(holder, key) {
++
++// The walk method is used to recursively walk the resulting structure so
++// that modifications can be made.
++
++                var k, v, value = holder[key];
++                if (value && typeof value === 'object') {
++                    for (k in value) {
++                        if (Object.prototype.hasOwnProperty.call(value, k)) {
++                            v = walk(value, k);
++                            if (v !== undefined) {
++                                value[k] = v;
++                            } else {
++                                delete value[k];
++                            }
++                        }
++                    }
++                }
++                return reviver.call(holder, key, value);
++            }
++
++
++// Parsing happens in four stages. In the first stage, we replace certain
++// Unicode characters with escape sequences. JavaScript handles many characters
++// incorrectly, either silently deleting them, or treating them as line endings.
++
++            text = String(text);
++            cx.lastIndex = 0;
++            if (cx.test(text)) {
++                text = text.replace(cx, function (a) {
++                    return '\\u' +
++                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
++                });
++            }
++
++// In the second stage, we run the text against regular expressions that look
++// for non-JSON patterns. We are especially concerned with '()' and 'new'
++// because they can cause invocation, and '=' because it can cause mutation.
++// But just to be safe, we want to reject all unexpected forms.
++
++// We split the second stage into 4 regexp operations in order to work around
++// crippling inefficiencies in IE's and Safari's regexp engines. First we
++// replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
++// replace all simple value tokens with ']' characters. Third, we delete all
++// open brackets that follow a colon or comma or that begin the text. Finally,
++// we look to see that the remaining characters are only whitespace or ']' or
++// ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
++
++            if (/^[\],:{}\s]*$/
++                    .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
++                        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
++                        .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
++
++// In the third stage we use the eval function to compile the text into a
++// JavaScript structure. The '{' operator is subject to a syntactic ambiguity
++// in JavaScript: it can begin a block or an object literal. We wrap the text
++// in parens to eliminate the ambiguity.
++
++                j = eval('(' + text + ')');
++
++// In the optional fourth stage, we recursively walk the new structure, passing
++// each name/value pair to a reviver function for possible transformation.
++
++                return typeof reviver === 'function'
++                    ? walk({'': j}, '')
++                    : j;
++            }
++
++// If the text is not JSON parseable, then a SyntaxError is thrown.
++
++            throw new SyntaxError('JSON.parse');
++        };
++    }
++}());
++
+diff --git a/openstack_dashboard/static/dashboard/js/servermgmt.js b/openstack_dashboard/static/dashboard/js/servermgmt.js
+new file mode 100644
+index 0000000..96d805a
+--- /dev/null
++++ b/openstack_dashboard/static/dashboard/js/servermgmt.js
+@@ -0,0 +1,108 @@
++function post_data(){
++    var rows_num = $(".modal-body .name").length - 1;
++    var data_list = new Array();
++    for (var i=1; i <= rows_num; i++)
++    {
++        row_id = $($(".modal-body .server_id")[i]).html();
++        var row = $("#serversaction__row__" + row_id);
++        checked = row.find(".multi_select_column").find("input").is(":checked");
++        if(checked == true)
++        {
++            id = row.find(".multi_select_column").find("input").val();
++            zone_id = row.find(".zone").html();
++            monitor = row.find(".monitor").find("input").attr("checked") ? true : false;
++            storage = row.find(".storage").find("input").attr("checked") ? true : false;
++
++            data = {id:id, is_monitor:monitor, is_storage:storage, zone_id:zone_id};
++		    data_list.push(data);
++		    resp=JSON.stringify(data_list);
++        }
++
++     }
++	token=$("input[name=csrfmiddlewaretoken]").val();
++
++	horizon.ajax.queue({
++        data: resp,
++        type: "post",
++        dataType: "json",
++        url: "/admin/provisioning/servers/add",
++        success: function (data) {horizon.alert(data.status, data.data);
++        var refresh_data = function(){
++            $(".status_up").removeClass("status_up").addClass("status_unknown");
++            horizon.datatables.update();
++            }
++        setTimeout(refresh_data, 8000);
++        },
++        error: function (XMLHttpRequest, textStatus, errorThrown) {
++            horizon.alert("error", "Add servers Error");
++            horizon.modals.spinner.modal('hide');
++        },
++        headers: {
++          "X-CSRFToken": token
++        },
++        complete: function(){
++          horizon.modals.spinner.modal('hide');
++          $(".close").click();
++       }
++    });
++
++    window.location.reload()						
++};
++
++function remove_servers(){
++    var rows_num = $(".modal-body .name").length - 1;
++    var data_list = new Array();
++    for (var i=1; i <= rows_num; i++)
++    {
++        row_id = $($(".modal-body .server_id")[i]).html();
++        var row = $("#serversaction__row__" + row_id);
++        checked = row.find(".multi_select_column").find("input").is(":checked");
++        if(checked == true)
++        {
++            id = row.find(".multi_select_column").find("input").val();
++            remove_storage = row.find(".remove_storage").find("input").attr("checked") ? true : false;
++
++            if(row.find(".role").html() == "storage,monitor")
++            {
++                remove_monitor = true;
++            }
++            else
++            {
++                remove_monitor = false;
++            }
++
++            data = {id:id, remove_monitor:remove_monitor, remove_storage:remove_storage};
++		    data_list.push(data);
++		    resp=JSON.stringify(data_list);
++        }
++
++     }
++	token=$("input[name=csrfmiddlewaretoken]").val();
++
++	horizon.ajax.queue({
++        data: resp,
++        type: "post",
++        dataType: "json",
++        url: "/admin/provisioning/servers/remove",
++        success: function (data) {horizon.alert(data.status, data.data);
++        var refresh_data = function(){
++            $(".status_up").removeClass("status_up").addClass("status_unknown");
++            horizon.datatables.update();
++         }
++        setTimeout(refresh_data, 8000);
++        },
++        error: function (XMLHttpRequest, textStatus, errorThrown) {
++            horizon.alert("error", "Add servers Error");
++            horizon.modals.spinner.modal('hide');
++        },
++        headers: {
++          "X-CSRFToken": token
++        },
++        complete: function(){
++          horizon.modals.spinner.modal('hide');
++          $(".close").click();
++       }
++    });
++
++    window.location.reload()						
++};
+\ No newline at end of file
+-- 
+1.7.9.5
+

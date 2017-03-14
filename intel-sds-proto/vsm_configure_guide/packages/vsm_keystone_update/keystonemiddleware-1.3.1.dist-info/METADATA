@@ -1,0 +1,58 @@
+Metadata-Version: 2.0
+Name: keystonemiddleware
+Version: 1.3.1
+Summary: Middleware for OpenStack Identity
+Home-page: http://launchpad.net/keystonemiddleware
+Author: OpenStack
+Author-email: openstack-dev@lists.openstack.org
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Requires-Dist: Babel (>=1.3)
+Requires-Dist: iso8601 (>=0.1.9)
+Requires-Dist: oslo.config (>=1.4.0)
+Requires-Dist: oslo.i18n (>=1.0.0)
+Requires-Dist: oslo.serialization (>=1.0.0)
+Requires-Dist: oslo.utils (>=1.1.0)
+Requires-Dist: pbr (>=0.6,!=0.7,<1.0)
+Requires-Dist: pycadf (>=0.6.0)
+Requires-Dist: python-keystoneclient (>=0.11.1)
+Requires-Dist: requests (>=2.2.0,!=2.4.0)
+Requires-Dist: six (>=1.7.0)
+Requires-Dist: WebOb (>=1.2.3)
+
+Middleware for the OpenStack Identity API (Keystone)
+====================================================
+
+This package contains middleware modules designed to provide authentication and
+authorization features to web services other than `Keystone
+<https://github.com/openstack/keystone>`. The most prominent module is
+``keystonemiddleware.auth_token``. This package does not expose any CLI or
+Python API features.
+
+The source is available on GitHub at:
+
+    http://github.com/openstack/keystonemiddleware
+
+Bugs and feature requests are tracked on Launchpad at:
+
+    https://bugs.launchpad.net/keystonemiddleware
+
+For any other information, refer to the parent project, Keystone:
+
+    https://github.com/openstack/keystone
+
+For information on contributing, see ``CONTRIBUTING.rst``.
+
+
+

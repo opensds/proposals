@@ -1,0 +1,456 @@
+From aa907c3923ebf20b9797b637c8c2cd88763a0555 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Mon, 15 Dec 2014 13:29:55 +0800
+Subject: [PATCH 5/5] Create compose virtual pool UI
+
+---
+ horizon/static/horizon/js/horizon.sds.js           |   37 +++++++
+ horizon/templates/horizon/_scripts.html            |    1 +
+ .../dashboards/admin/composepool/forms.py          |   60 +++++++++++
+ .../dashboards/admin/composepool/panel.py          |   32 ++++++
+ .../dashboards/admin/composepool/tables.py         |  110 ++++++++++++++++++++
+ .../composepool/templates/composepool/_create.html |   13 +++
+ .../composepool/templates/composepool/create.html  |   11 ++
+ .../composepool/templates/composepool/index.html   |   11 ++
+ .../dashboards/admin/composepool/urls.py           |   28 +++++
+ .../dashboards/admin/composepool/views.py          |   53 ++++++++++
+ 10 files changed, 356 insertions(+)
+ create mode 100644 horizon/static/horizon/js/horizon.sds.js
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/__init__.py
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/forms.py
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/panel.py
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/tables.py
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/templates/composepool/create.html
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/templates/composepool/index.html
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/urls.py
+ create mode 100644 openstack_dashboard/dashboards/admin/composepool/views.py
+
+diff --git a/horizon/static/horizon/js/horizon.sds.js b/horizon/static/horizon/js/horizon.sds.js
+new file mode 100644
+index 0000000..89838bd
+--- /dev/null
++++ b/horizon/static/horizon/js/horizon.sds.js
+@@ -0,0 +1,37 @@
++horizon.addInitFunction(function () {
++  /* Launch instance workflow */
++
++  // Handle field toggles for the Launch Instance source type field
++
++  function update_launch_system_displayed_fields (field) {
++    var $this = $(field),
++      base_type = $this.val();
++
++    $this.closest(".form-group").nextAll().hide();
++
++    switch(base_type) {
++      case "system_type":
++        $("#id_system_type").closest(".form-group").show();
++        break;
++
++      case "ceph_tiers":
++        $("#id_ceph_tiers").closest(".form-group").show();
++        break;
++
++      case "swift_tiers":
++        $("#id_swift_tiers").closest(".form-group").show();
++        break;
++
++    }
++  }
++
++  $(document).on('change', '#id_system_type', function (evt) {
++    update_launch_system_displayed_fields(this);
++  });
++  
++  $('#id_system_type').change();
++  horizon.modals.addModalInitFunction(function (modal) {
++    $(modal).find("#id_system_type").change();
++  });
++
++});
+diff --git a/horizon/templates/horizon/_scripts.html b/horizon/templates/horizon/_scripts.html
+index aed45a3..97f8973 100644
+--- a/horizon/templates/horizon/_scripts.html
++++ b/horizon/templates/horizon/_scripts.html
+@@ -40,6 +40,7 @@
+ <script src='{{ STATIC_URL }}horizon/js/horizon.forms.js' type='text/javascript' charset='utf-8'></script>
+ <script src='{{ STATIC_URL }}horizon/js/horizon.formset_table.js' type='text/javascript' charset='utf-8'></script>
+ <script src='{{ STATIC_URL }}horizon/js/horizon.instances.js' type='text/javascript' charset='utf-8'></script>
++<script src='{{ STATIC_URL }}horizon/js/horizon.sds.js' type='text/javascript' charset='utf-8'></script>
+ <script src='{{ STATIC_URL }}horizon/js/horizon.messages.js' type='text/javascript' charset='utf-8'></script>
+ <script src='{{ STATIC_URL }}horizon/js/horizon.modals.js' type='text/javascript' charset='utf-8'></script>
+ <script src='{{ STATIC_URL }}horizon/js/horizon.quota.js' type='text/javascript' charset='utf-8'></script>
+diff --git a/openstack_dashboard/dashboards/admin/composepool/__init__.py b/openstack_dashboard/dashboards/admin/composepool/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/openstack_dashboard/dashboards/admin/composepool/forms.py b/openstack_dashboard/dashboards/admin/composepool/forms.py
+new file mode 100644
+index 0000000..f6a1ef0
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/forms.py
+@@ -0,0 +1,60 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++import logging
++
++from django.utils.translation import ugettext_lazy as _
++
++from horizon import exceptions
++from horizon import forms
++from horizon import messages
++
++from openstack_dashboard import api
++
++LOG = logging.getLogger(__name__)
++
++
++class CreateVirtualPoolForm(forms.SelfHandlingForm):
++
++    name = forms.CharField(max_length=255, label=_("Name"))
++    system_type = forms.ChoiceField(label = _('Storage System'), required = True,)
++    ceph_tiers = forms.ChoiceField(label = _('Attached Tiers'), required = True,)
++    swift_tiers = forms.ChoiceField(label = _('Attached Tiers'), required = True,)
++
++    def __init__(self, request, *args, **kwargs):
++        super(CreateVirtualPoolForm, self).__init__(request, *args, **kwargs)
++        storage_choices = [("", _("Select storage system")),
++                           ("ceph_tiers", _("Ceph")), 
++                           ("swift_tiers", _("Swift"))]
++        
++        backends = api.sds.storage_backends_list(request, True)
++        tiers_choices = {}
++        for _backend in backends:
++            tiers_choices[_backend.name] = [(tier['id'], tier['name']) for \
++                                            tier in _backend.tiers]
++        for _tiers_choices in tiers_choices.values():
++            if _tiers_choices:
++                _tiers_choices.insert(0, ("", _("Select tiers")))
++            else:
++                _tiers_choices.insert(0, ("", _("No avaliable tiers")))
++        self.fields['system_type'].choices = storage_choices
++        self.fields['ceph_tiers'].choices = tiers_choices['ceph']
++        self.fields['swift_tiers'].choices = tiers_choices['swift']
++
++    def handle(self, request, data):
++        return True
+diff --git a/openstack_dashboard/dashboards/admin/composepool/panel.py b/openstack_dashboard/dashboards/admin/composepool/panel.py
+new file mode 100644
+index 0000000..69d054a
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/panel.py
+@@ -0,0 +1,32 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.utils.translation import ugettext_lazy as _
++
++import horizon
++
++from openstack_dashboard.dashboards.admin import dashboard
++
++
++class ComposePool(horizon.Panel):
++    name = _("Compose Pool")
++    slug = 'composepool'
++    permissions = ('openstack.roles.admin',)
++
++
++dashboard.Admin.register(ComposePool)
+diff --git a/openstack_dashboard/dashboards/admin/composepool/tables.py b/openstack_dashboard/dashboards/admin/composepool/tables.py
+new file mode 100644
+index 0000000..222dee2
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/tables.py
+@@ -0,0 +1,110 @@
++# Copyright 2012 OpenStack Foundation
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.template.defaultfilters import title  # noqa
++from django.utils.translation import pgettext_lazy
++from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import ungettext_lazy
++
++from horizon import tables
++from horizon.utils import filters
++
++
++STATUS_DISPLAY_CHOICES = (
++    ("active", pgettext_lazy("Current status of storage system", u"Active")),
++    ("available", pgettext_lazy("Current status of storage system", u"Available")),
++    ("error", pgettext_lazy("Current status of storage system", u"Error")),)
++
++
++STATUS_CHOICES = (("active", True), ("available", True), ("error", False),
++    )
++
++
++class VirtualPoolFilterAction(tables.FilterAction):
++    # Change default name of 'filter' to distinguish this one from the
++    # project instances table filter, since this is used as part of the
++    # session property used for persisting the filter.
++    name = "filter_virtual_pool"
++    filter_type = "server"
++    filter_choices = (('name', _("Name="), True),
++                      ('storagesystem', _("Storage System="), True),
++                      ('tier', _("Tier="), False),
++                      ('datatype', _("Data Type ="), True),
++                      ('capacity', _("Capacity >="), True),
++                      ('used', _("Capacity Used >="), True))
++
++    def filter(self, table, data, filter_string):
++        """Server side search.
++        When filtering is supported in the api, then we will handle in view
++        """
++        filter_field = table.get_filter_field()
++        if filter_field == 'Name' and filter_string:
++            return [_data for _data in data
++                    if data.storagesystem == filter_string]
++        return data
++
++
++class CreateVirtulPool(tables.LinkAction):
++    name = "createvirtualpool"
++    verbose_name = _("Create Virtual Pool")
++    url = "horizon:admin:composepool:create"
++    classes = ("ajax-modal", "btn-create")
++    icon = "plus"
++
++
++class RemoveVirtualPool(tables.DeleteAction):
++    @staticmethod
++    def action_present(count):
++        return ungettext_lazy(
++            u"Remove Virtual Pool",
++            u"Remove Virtual Pools",
++            count
++        )
++
++    @staticmethod
++    def action_past(count):
++        return ungettext_lazy(
++            u"Remove Virtual Pool",
++            u"Remove Virtual Pools",
++            count
++        )
++
++
++class ComposePoolTable(tables.DataTable):
++    
++    #id  = tables.Column("id", verbose_name=_("ID"))
++    name  = tables.Column("name", verbose_name=_("Name"))
++    storagesystem = tables.Column('storagesystem', verbose_name=_("Storage System"))
++    tier = tables.Column("tier",
++                         verbose_name=_("Tier"))
++    datatype = tables.Column("datatype",
++                       verbose_name=_("Data Type"))
++    
++    capacity = tables.Column("capacity", verbose_name=_("Capacity Total"))
++    used = tables.Column("used", verbose_name=_("Capacity Used"))
++
++    status = tables.Column(
++        "status",
++        verbose_name=_("Status"),
++        status=True,
++        status_choices=STATUS_CHOICES,
++        display_choices=STATUS_DISPLAY_CHOICES,
++        classes=("status",))
++
++    class Meta:
++        name = "composepool"
++        verbose_name = _("Compose Virtual Pool")
++        table_actions = (CreateVirtulPool, RemoveVirtualPool,)
++        #row_actions = (StorageSystemDetail,)
+diff --git a/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
+new file mode 100644
+index 0000000..d5fc873
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
+@@ -0,0 +1,13 @@
++{% extends "horizon/common/_modal_form.html" %}
++{% load i18n %}
++{% load url from future %}
++
++{% block form_id %}create_virtual_pool_form{% endblock %}
++{% block form_action %}{% url 'horizon:admin:composepool:index' %}{% endblock %}
++
++{% block modal_id %}create_virtual_pool__modal{% endblock %}
++{% block modal-header %}{% trans "Create Virtual Pool" %}{% endblock %}
++
++{% block modal-footer %}
++  <input class="btn btn-primary pull-right" type="button" value="Attach System/Tier" onclick="window.parent.location.reload();" />
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/composepool/templates/composepool/create.html b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/create.html
+new file mode 100644
+index 0000000..db24211
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/create.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Create Virtual Pool" %}{% endblock %}
++
++{% block page_header %}
++    {% include "horizon/common/_page_header.html" with title=_("Create Virtual Pool") %}
++{% endblock page_header %}
++
++{% block main %}
++    {% include 'admin/composepool/_create.html' %}
++{% endblock %}
+\ No newline at end of file
+diff --git a/openstack_dashboard/dashboards/admin/composepool/templates/composepool/index.html b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/index.html
+new file mode 100644
+index 0000000..048684d
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/index.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Compose Virtual Pool" %}{% endblock %}
++
++{% block page_header %}
++  {% include "horizon/common/_page_header.html" with title=_("Compose Virtual Pool") %}
++{% endblock page_header %}
++
++{% block main %}
++    {{ table.render }}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/composepool/urls.py b/openstack_dashboard/dashboards/admin/composepool/urls.py
+new file mode 100644
+index 0000000..707eac5
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/urls.py
+@@ -0,0 +1,28 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.conf.urls import patterns
++from django.conf.urls import url
++
++from openstack_dashboard.dashboards.admin.composepool import views
++
++
++urlpatterns = patterns('openstack_dashboard.dashboards.admin.composepool.views',
++    url(r'^$', views.IndexView.as_view(), name='index'),
++    url(r'^create/$', views.CreateVirtualPool.as_view(), name='create'),
++)
+diff --git a/openstack_dashboard/dashboards/admin/composepool/views.py b/openstack_dashboard/dashboards/admin/composepool/views.py
+new file mode 100644
+index 0000000..61b4096
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/composepool/views.py
+@@ -0,0 +1,53 @@
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 OpenStack Foundation
++# Copyright 2012 Nebula, Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++import logging
++
++from django.core.urlresolvers import reverse
++from django.core.urlresolvers import reverse_lazy
++from django.utils.datastructures import SortedDict
++from django.utils.translation import ugettext_lazy as _
++
++from horizon import exceptions
++from horizon import forms
++from horizon import tables
++from horizon.utils import memoized
++
++from openstack_dashboard import api
++from openstack_dashboard.dashboards.admin.composepool \
++    import tables as project_tables
++from openstack_dashboard.dashboards.admin.composepool \
++    import forms as project_forms
++
++
++LOG = logging.getLogger(__name__)
++
++class IndexView(tables.DataTableView):
++    table_class = project_tables.ComposePoolTable
++    template_name = 'admin/composepool/index.html'
++
++    def get_data(self):
++        return api.sds.storage_pools_list(self.request)
++
++
++class CreateVirtualPool(forms.ModalFormView):
++    form_class = project_forms.CreateVirtualPoolForm
++    template_name = 'admin/composepool/create.html'
++#    success_url = reverse_lazy("horizon:admin:composepool:index")
++
+-- 
+1.7.9.5
+

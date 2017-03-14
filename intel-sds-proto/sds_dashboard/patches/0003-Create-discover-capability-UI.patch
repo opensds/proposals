@@ -1,0 +1,453 @@
+From 488c73267d0c57f5c697c631ce3b2951c416f466 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Mon, 15 Dec 2014 11:05:57 +0800
+Subject: [PATCH 3/5] Create discover capability UI
+
+---
+ .../dashboards/admin/discovercapability/forms.py   |   82 ++++++++++++++++++++
+ .../dashboards/admin/discovercapability/panel.py   |   29 +++++++
+ .../dashboards/admin/discovercapability/tables.py  |   81 +++++++++++++++++++
+ .../templates/discovercapability/_discover.html    |   21 +++++
+ .../discovercapability/_storagedetails.html        |   25 ++++++
+ .../templates/discovercapability/discover.html     |   11 +++
+ .../templates/discovercapability/index.html        |   11 +++
+ .../discovercapability/storagedetails.html         |   11 +++
+ .../dashboards/admin/discovercapability/urls.py    |   27 +++++++
+ .../dashboards/admin/discovercapability/views.py   |   60 ++++++++++++++
+ 10 files changed, 358 insertions(+)
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/__init__.py
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/forms.py
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/panel.py
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/tables.py
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_discover.html
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_storagedetails.html
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/discover.html
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/index.html
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/storagedetails.html
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/urls.py
+ create mode 100644 openstack_dashboard/dashboards/admin/discovercapability/views.py
+
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/__init__.py b/openstack_dashboard/dashboards/admin/discovercapability/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/forms.py b/openstack_dashboard/dashboards/admin/discovercapability/forms.py
+new file mode 100644
+index 0000000..15df316
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/forms.py
+@@ -0,0 +1,82 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License
++
++import re
++
++from django.utils.translation import ugettext_lazy as _
++
++from horizon import exceptions
++from horizon import forms
++from horizon import messages
++
++from openstack_dashboard import api
++
++
++NEW_LINES = re.compile(r"\r|\n")
++
++NETWORK_RANGE_REGEX = re.compile(r"^[\d\.]+$", re.UNICODE)
++NETWORK_ERROR_MESSAGES = {'invalid': _('Network range may '
++                                   'only contain numbers, '
++                                   'and hyphens.')}
++
++
++class Discover(forms.SelfHandlingForm):
++    ACCESS_CHOICES = (
++        ("ceph", _("Ceph")),
++        ("swift", _("Swift")),
++    )
++
++    ip = forms.RegexField(max_length=255,
++                           label=_("Network Range"),
++                           regex=NETWORK_RANGE_REGEX,
++                           error_messages=NETWORK_ERROR_MESSAGES)
++
++    storagesystem = forms.ChoiceField(label=_("Storage System"),
++                              choices=ACCESS_CHOICES)
++
++    def handle(self, request, data):
++        try:
++            ip_cidr = data.get("ip")
++            storage_type = data.get("storagesystem")
++
++            #FIXME(fengqian): For now, two type of system could be discovered,
++            #ceph and swift. But UI doesn't provide the input of user and
++            #password. So, hard code is added here.
++            #We use Cephx now, so the user name or fsid is not
++            #necessary, just set it do default or else it will return failure.
++            #For swift, fsid is the password.
++            metadata_dict = {'ceph': {"user": "cinder", "fsid": \
++                                      "9e9eaf21-8e43-4465-851c-e8d9a1b00956"},
++                             'swift': {"user": "test:tester",
++                                       "fsid": "testing"}}
++
++            metadata = metadata_dict[storage_type]
++            discover_data = api.sds.discover_storage(request, ip_cidr,
++                                                    storage_type, metadata)
++            messages.success(request,
++                             _('Successfully discover storage system: %s') \
++                             % ip_cidr)
++
++            return discover_data
++        except Exception:
++            exceptions.handle(request,
++                              _('Unable to discover storage system.'))
++            return False
++
++
++class StorageDetails(forms.SelfHandlingForm):
++    """ Empty class for StorageDetails form"""
++    def handle(self, request, data):
++        pass
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/panel.py b/openstack_dashboard/dashboards/admin/discovercapability/panel.py
+new file mode 100644
+index 0000000..df65b63
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/panel.py
+@@ -0,0 +1,29 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License
++
++from django.utils.translation import ugettext_lazy as _
++
++import horizon
++
++from openstack_dashboard.dashboards.admin import dashboard
++
++
++class DiscoverCapability(horizon.Panel):
++    name = _("Discover Capability")
++    slug = 'discovercapability'
++    permissions = ('openstack.roles.admin',)
++
++
++dashboard.Admin.register(DiscoverCapability)
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/tables.py b/openstack_dashboard/dashboards/admin/discovercapability/tables.py
+new file mode 100644
+index 0000000..96a6c18
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/tables.py
+@@ -0,0 +1,81 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from django.utils.translation import ugettext_lazy as _
++
++from horizon import tables
++
++
++class StorageSystemDetails(tables.LinkAction):
++    name = "storagedetails"
++    verbose_name = _("Details")
++    url = "horizon:admin:discovercapability:storagedetails"
++    classes = ("ajax-modal",)
++    icon = "pencil"
++
++
++class DiscoverFilterAction(tables.FilterAction):
++    name = "filter_discover"
++    filter_type = "server"
++    filter_choices = (('storagesystem', _("Storage System="), True),
++                      ('tier', _("Tier="), False),
++                      ('datatype', _("Data Type ="), True),
++                      ('capacity', _("Capacity >="), True),
++                      ('used', _("Capacity Used >="), True))
++
++    def filter(self, table, data, filter_string):
++        """Server side search.
++        When filtering is supported in the api, then we will handle in view
++        """
++        filter_field = table.get_filter_field()
++        if filter_field == 'Storage System' and filter_string:
++            return [_data for _data in data
++                    if data.storagesystem == filter_string]
++        return data
++
++
++class Discover(tables.LinkAction):
++    name = "discover"
++    verbose_name = _("Discover")
++    classes = ("ajax-modal",)
++    url = "horizon:admin:discovercapability:discover"
++    icon = "plus"
++
++
++class DiscoverCapabilityTable(tables.DataTable):
++    
++    storagesystem = tables.Column('storagesystem',
++                                  verbose_name=_("Storage System"))
++    tier = tables.Column("tier",
++                         verbose_name=_("Tier"))
++    datatype = tables.Column("data_type",
++                       verbose_name=_("Data Type"))
++    
++    capacity = tables.Column("total", verbose_name=_("Capacity Total"))
++    used = tables.Column("used", verbose_name=_("Capacity Used"))
++    
++    efficiency = tables.Column("data_efficiency",
++                               verbose_name=_("Data Efficiency"))
++    protection = tables.Column("protection", verbose_name=_("Data Protection"))
++    dataservices = tables.Column("data_services", verbose_name=_("Data Services"))
++    vendorservices = tables.Column("vendor_services",
++                                   verbose_name=_("Vendor Services"))
++    performance = tables.Column("performance_IOPS", verbose_name=_("Performance"))
++
++    class Meta:
++        name = "discover"
++        verbose_name = _("Discover Capability")
++        table_actions = (Discover,)
++        row_actions = (StorageSystemDetails,)
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_discover.html b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_discover.html
+new file mode 100644
+index 0000000..d58354f
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_discover.html
+@@ -0,0 +1,21 @@
++{% extends "horizon/common/_modal_form.html" %}
++{% load i18n %}
++{% load url from future %}
++
++{% block form_id %}discover_form{% endblock %}
++{% block form_action %}{% url 'horizon:admin:discovercapability:discover' %}{% endblock %}
++
++{% block modal-header %}{% trans "Discover" %}{% endblock %}
++
++{% block modal-body %}
++<div class="left">
++    <fieldset>
++    {% include "horizon/common/_form_fields.html" %}
++    </fieldset>
++</div>
++{% endblock %}
++
++{% block modal-footer %}
++   <input type="submit" class="btn btn-primary pull-right" value={% trans "Discover" %} />
++   <a href="{% url 'horizon:admin:discovercapability:index' %}" class="btn btn-default secondary cancel close">{% trans "Cancel" %}</a>
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_storagedetails.html b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_storagedetails.html
+new file mode 100644
+index 0000000..b61ee1c
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/_storagedetails.html
+@@ -0,0 +1,25 @@
++{% extends "horizon/common/_modal_form.html" %}
++{% load i18n %}
++{% load url from future %}
++
++{% block form_id %}storagedetails_form{% endblock %}
++
++{% block modal-header %}{% trans "Storage System Details" %}{% endblock %}
++
++{% block modal-body %}
++
++<pre class="data">
++{{ content }}
++</pre>
++
++<div class="left">
++    <fieldset>
++    {% include "horizon/common/_form_fields.html" %}
++    </fieldset>
++</div>
++{% endblock %}
++
++
++{% block modal-footer %}
++   <a href="{% url 'horizon:admin:discovercapability:index' %}" class="btn btn-default secondary cancel close">{% trans "OK" %}</a>
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/discover.html b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/discover.html
+new file mode 100644
+index 0000000..8a339fe
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/discover.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Discover" %}{% endblock %}
++
++{% block page_header %}
++    {% include "horizon/common/_page_header.html" with title=_("Storage System Details") %}
++{% endblock page_header %}
++
++{% block main %}
++    {% include 'admin/discovercapability/_discover.html' %}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/index.html b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/index.html
+new file mode 100644
+index 0000000..4148e3d
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/index.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Discover Capability" %}{% endblock %}
++
++{% block page_header %}
++  {% include "horizon/common/_page_header.html" with title=_("Discover Storage Capability") %}
++{% endblock page_header %}
++
++{% block main %}
++    {{ table.render }}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/storagedetails.html b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/storagedetails.html
+new file mode 100644
+index 0000000..82556b8
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/templates/discovercapability/storagedetails.html
+@@ -0,0 +1,11 @@
++{% extends 'base.html' %}
++{% load i18n %}
++{% block title %}{% trans "Storage System Details" %}{% endblock %}
++
++{% block page_header %}
++    {% include "horizon/common/_page_header.html" with title=_("Storage System Details") %}
++{% endblock page_header %}
++
++{% block main %}
++    {% include 'admin/discovercapability/_storagedetails.html' %}
++{% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/urls.py b/openstack_dashboard/dashboards/admin/discovercapability/urls.py
+new file mode 100644
+index 0000000..a36bd99
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/urls.py
+@@ -0,0 +1,27 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License
++
++from django.conf.urls import patterns
++from django.conf.urls import url
++
++from openstack_dashboard.dashboards.admin.discovercapability import views
++
++
++urlpatterns = patterns('openstack_dashboard.dashboards.admin.discovercapability.views',
++    url(r'^$', views.IndexView.as_view(), name='index'),
++    url(r'^discover$', views.Discover.as_view(), name='discover'),
++    url(r'^(?P<id>[^/]+)/storagedetails/$', views.StorageDetails.as_view(), \
++        name='storagedetails'),
++)
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/views.py b/openstack_dashboard/dashboards/admin/discovercapability/views.py
+new file mode 100644
+index 0000000..d715c14
+--- /dev/null
++++ b/openstack_dashboard/dashboards/admin/discovercapability/views.py
+@@ -0,0 +1,60 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License
++
++from django.core.urlresolvers import reverse_lazy
++import json
++
++from horizon import forms
++from horizon import tables
++
++from openstack_dashboard import api
++from openstack_dashboard.dashboards.admin.discovercapability \
++    import tables as project_tables
++from openstack_dashboard.dashboards.admin.discovercapability \
++    import forms as project_forms
++
++import logging
++LOG = logging.getLogger(__name__)
++
++
++class Discover(forms.ModalFormView):
++
++    form_class = project_forms.Discover
++    template_name = 'admin/discovercapability/discover.html'
++    success_url = reverse_lazy("horizon:admin:discovercapability:index")
++
++
++class StorageDetails(forms.ModalFormView):
++
++    form_class = project_forms.StorageDetails
++    template_name = 'admin/discovercapability/storagedetails.html'
++    success_url = reverse_lazy("horizon:admin:discovercapability:index")
++
++    def get_context_data(self, **kwargs):
++        context = super(StorageDetails, self).get_context_data(**kwargs)
++        id = self.kwargs["id"]
++        data = api.sds.storage_tiers_get(self.request, id)
++        context['content'] = \
++            json.dumps(data._info, sort_keys=True, indent=4, separators=(',', ': '))
++
++        return context
++
++
++class IndexView(tables.DataTableView):
++    table_class = project_tables.DiscoverCapabilityTable
++    template_name = 'admin/discovercapability/index.html'
++
++    def get_data(self):
++        return api.sds.storage_discovered_data(self.request)
+-- 
+1.7.9.5
+

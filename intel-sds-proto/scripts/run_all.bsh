@@ -1,0 +1,60 @@
+#! /bin/bash
+
+check_fail() 
+{
+    value=$?
+    if [ $value -ne 0 ] 
+    then
+        echo "FAILED THIS STEP with Value: $value ABORT!"
+        exit
+    fi
+}
+
+echo "Setting up credentials"
+source /home/cebruns/admin-openrc.sh
+
+echo "Deleting all backends first (sdsclient backend-delete)"
+x=`sdsclient backend-list | awk {'if ($2 ~ /^[0-9,a-f]/) print $2'}`
+readarray -t y <<< "$x"
+for element in "${y[@]}"
+do
+    echo "Deleting $element backend id"
+    sdsclient backend-delete $element
+done
+
+echo "Discovering Swift Cluster at 10.0.0.11 (sdsclient discover)"
+sdsclient --debug discover '10.0.0.11' 'swift' user='test:tester' fsid='testing'
+check_fail
+
+echo "Printing out Backend List (sdsclient backend-list)"
+sdsclient backend-list
+backend=`sdsclient backend-list | awk {'if ($2 ~ /^[0-9,a-f]/) print $2'}`
+check_fail
+
+echo "Working on this backend $backend"
+
+echo "Showing backend Config Spec (sdsclient backend-config-show)"
+sdsclient backend-config-show $backend
+check_fail
+
+echo "Showing Backend Capability (sdsclient backend-capability-show)"
+sdsclient backend-capability-show $backend
+check_fail
+
+# Show all Tiers for a Backend
+echo "Showing Backend Tiers/Policies (sdsclient backend-tier-list)"
+sdsclient backend-tier-list $backend
+tier=`sdsclient backend-tier-list | awk {'if ($2 ~ /^[0-9,a-f]/) print $2'}`
+check_fail
+
+# For each Tier - get more detail
+readarray -t y <<< "$tier"
+for element in "${y[@]}"
+do
+    echo "Showing Backend Tier Info for Tier: $element (sdsclient backend-tier-show)"
+    sdsclient backend-tier-show $element
+    check_fail
+done
+
+echo "Done!"
+

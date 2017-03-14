@@ -1,0 +1,7 @@
+export ST_AUTH=http://10.0.0.55:8080/auth/v1.0
+#export ST_AUTH=http://10.0.0.55:8080/v1/AUTH_8dc9e0270bfe40eeb06ed5c817b76a72
+# ST_USER is a combination of account:user
+# Found in the /etc/swift/proxy-server.conf file
+export ST_USER=swifttenanttest1:swiftusertest3
+export ST_KEY=testing3
+

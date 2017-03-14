@@ -1,0 +1,4 @@
+# sds-rootwrap command filters for agent nodes
+# This file should be owned by (and only-writeable by) the root user
+
+[Filters]

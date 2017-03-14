@@ -1,0 +1,3 @@
+[console_scripts]
+sdsclient = sdsclient.shell:main
+

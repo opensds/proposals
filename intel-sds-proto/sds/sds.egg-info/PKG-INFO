@@ -1,0 +1,177 @@
+Metadata-Version: 1.1
+Name: sds
+Version: 2015.1.dev346.g837ff0e
+Summary: OpenStack SDS Controller
+Home-page: http://www.openstack.org/
+Author: OpenStack
+Author-email: openstack-dev@lists.openstack.org
+License: UNKNOWN
+Description: Introduction - Software Defined Storage (SDS) Controller Prototype
+        ==================================================================
+        This package, along with the python-sdsclient, provide the basic framework
+        for an SDS Controller.  The reason for the "Prototype" moniker is that this
+        is a preliminary model of what an SDS Controller could contain and provide.
+        There are a lot of different opinions and thoughts on SDS and how to split
+        the data plane and the management plane for an SDS Controller, so the goal
+        of this SDS Controller Prototype is to demonstrate basic functionality.
+        By demonstrating basic functionality with the prototype, it will hopefully
+        trigger open conversations and discussions on what else should be added,
+        enhanced, or removed in order to provide for a better SDS Solution.
+        
+        Prerequisites
+        =============
+        The SDS Controller Prototype is intended to be used in an OpenStack
+        environment.  It relies on Keystone services for authentication, MySQL
+        for database services, and RabbitMQ for messaging.  Install these services
+        as outlined in the OpenStack Documentation:
+        http://docs.openstack.org/juno/install-guide/install/apt/content/
+        
+        The SDS Controller Prototype was developed and tested on an Ubuntu 14.04
+        Server Virtual Machine with Keystone, MySQL, and RabbitMQ services running
+        locally on the VM.  For the "Discovery" routines, the Swift and Ceph
+        clusters were running in separate VMs, accessible within the same subnet.
+        
+        Installation Steps
+        ==================
+        First, use sections 1-3 in the OpenStack install guide for Juno:
+        http://docs.openstack.org/juno/install-guide/install/apt/content/
+        to install:
+        - MySQL
+        - RabbitMQ
+        - Keystone services.
+        To install, test, and develop with the SDS Controller Prototype, other
+        services, such as Cinder and Nova, are not required.
+        
+        From within the SDS directory, install the SDS Controller modules:
+        $ sudo python setup.py install
+        
+        Create a user named sds:
+        $ sudo adduser sds
+        
+        Move the sds/etc/sds directory into the /etc/ folder
+        $ sudo mv sds/etc/sds /etc/.
+        
+        Change ownership of the /etc/sds directory to the sds user:
+        $ sudo chown -R sds /etc/sds
+        
+        Copy the /etc/sds/sds.conf.example to /etc/sds/sds.conf and modify
+        it for your environment/setup.
+        NOTE: There are many configuration options, but it is suggested
+        to modify the uncommented lines for passwords and HOSTNAME to
+        match your OpenStack environment.
+        
+        Copy the /etc/sds/logging_sample.conf to /etc/sds/logging.conf and
+        modify it for your environment/setup.
+        NOTE: No changes should be required to get SDS running.
+        
+        Create the SDS Controller Prototype Database:
+        $ mysql -u root -p
+        mysql> CREATE DATABASE sds;
+        mysql> GRANT ALL PRIVILEGES ON sds.* TO 'sds'@'localhost' \
+          IDENTIFIED BY 'SDS_PASSWORD';
+        mysql> GRANT ALL PRIVILEGES ON sds.* TO 'sds'@'%' \
+          IDENTIFIED BY 'SDS_PASSWORD';
+        mysql> quit
+        
+        $ su -s /bin/sh -c "sds-manage db sync" sds
+        
+        Create the Keystone Endpoint and Service for SDS
+        # Assuming you followed the Keystone Install Guide, admin-openrc.sh file
+        # has proper credentials.
+        $ source ~/admin-openrc.sh
+        
+        Replace 'PASSWORD' and email with proper setting:
+        $ keystone user-create --name=sds --pass='PASSWORD' --email=email@example.com
+        $ keystone user-role-add --user=sds --tenant=service --role=admin
+        $ keystone service-create --name=sds --type=sds --description="SDS Service"
+        Replace 'HOSTNAME' with proper setting:
+        $ keystone endpoint-create \
+          --service-id=$(keystone service-list | awk '/ sds / {print $2}') \
+          --publicurl=http://'HOSTNAME':9776/v1/%\(tenant_id\)s \
+          --internalurl=http://'HOSTNAME':9776/v1/%\(tenant_id\)s \
+          --adminurl=http://'HOSTNAME':9776/v1/%\(tenant_id\)s
+        
+        Start the SDS service:
+        $ sds-api
+        
+        Install the sdsclient command-line interface.  Inside the python-sdsclient
+        directory:
+        $ sudo python setup.py install
+        
+        Verify SDS Controller Prototype is Operational via sdsclient
+        ============================================================
+        Verify the sdsclient installation succeeded:
+        $ sdsclient --version
+        2015.1
+        
+        Verify the sdsclient can communicate with the SDS API:
+        $ sdsclient backend-list
+        +----+------+-----------------+---------------------+
+        | id | Name | config_specs_id | capability_specs_id |
+        +----+------+-----------------+---------------------+
+        +----+------+-----------------+---------------------+
+        
+        Assuming you have a Swift cluster on the same subnet as the SDS Controller,
+        you can call the discover routine to find the Swift installation.
+        $ sdsclient discover 'SWIFT_IP_ADDRESS' 'swift' \
+          user='SWIFTACCOUNT:SWIFTUSERNAME' fsid='SWIFTPASSWORD'
+        
+        Your output will be different and will reflect your Swift Cluster setup.
+        This is just sample output from a SAIO cluster:
+        ============== storage system info ================
+        name = swift
+        storage config = {u'version': u'2.0.0.74.g3e78432', u'user': u'test:tester', u'fsid': u'testing'}
+        storage capabilities = {u'data_type': u'object', u'capacity_avail_kb': u'', u'capacity_total_kb': u'', u'performance_IOPS': u'', u'data_efficiency': u'', u'capacity_used_kb': u'3083', u'vendor_services': u''}
+        ============== tier info ================
+        name = gold
+        capability specs = {u'data_protection': u'', u'capacity_used_kb': u'2059'}
+        name = silver
+        capability specs = {u'data_protection': u'', u'capacity_used_kb': u'1024'}
+        
+        Verify the Discover routine populated the SDS Database with a new backend:
+        $ sdsclient backend-list
+        Your id fields will be different, but should not be empty:
+        +--------------------------------------+-------+--------------------------------------+--------------------------------------+
+        |                  id                  |  Name |           config_specs_id            |         capability_specs_id          |
+        +--------------------------------------+-------+--------------------------------------+--------------------------------------+
+        | ce6c2cb9-5a90-452a-a34d-3caa10ed3e99 | swift | f4c13439-ae80-4470-b66c-8d09ac9132f9 | e315121b-c72d-4ab7-871e-8ffc3a6957d4 |
+        +--------------------------------------+-------+--------------------------------------+--------------------------------------+
+        
+        Once you have verified operation of the sdsclient and sds-api, you can
+        install and begin to use the Horizon UI to interace with the SDS Controller
+        Prototype.
+        
+        Verify SDS Controller Prototype is Operational via ReST Calls
+        =============================================================
+        You can also verify the ReST interface of the SDS Controller Prototype
+        by using 'curl' commands to authenticate and interace with the SDS API.
+        
+        First, obtain a token from keystone:
+        # This will Authenticate with Keystone to get us a Token in the variable: TOKEN
+        # We can then submit this token to future commands with curl
+        $ export TOKEN=`curl 'http://[HOST_IP]:5000/v2.0/tokens' -X POST -H "Content-Type: application/json" -H "Accept: application/json"  -d '{"auth": {"tenantName": "admin", "passwordCredentials": {"username": "admin", "password": "PASSWORD"}}}' | python -c 'import sys, json; print json.load(sys.stdin)["access"]["token"]["id"]'`
+        
+        Next, use this token to perform authentication and do a backend-list request
+        of the SDS Controller:
+        $ curl -v http://[HOST_IP]:9776/v1/[admin_tenant_id]/backends -X GET -H "X-Auth-Token: $TOKEN"
+        
+        Another example is using curl to perform Discovery of a Swift cluster, 
+        similar to how the sdsclient was invoked. First obtain the auth token from
+        keystone using the curl command given earlier.
+        
+        Create a file, named discover.json, which has the following content:
+        {"storage_discover": {"storage_type": "swift", "ip_cidr": "SWIFT_IP_ADDRESS", "metadata": {"user": "SWIFT_ACCOUNT:SWIFT_USER", "fsid": "SWIFT_PASSWORD"}}}
+        
+        Now call the Discover API:
+        curl -X POST -v http://[HOST_IP]:9776/v1/[ADMIN_TENANT]/discover -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" -d "@discover.json"
+        
+        
+Platform: UNKNOWN
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7

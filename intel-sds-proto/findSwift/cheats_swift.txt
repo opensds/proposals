@@ -1,0 +1,37 @@
+# Resetting and Starting Swift
+resetswift
+remakerings
+startmain
+
+# For SS Controller usage:
+export ST_USER=swiftstack
+export ST_KEY=intel123
+export ST_AUTH=http://10.0.0.99:80/auth/v1.0
+
+# For SAIO Usage
+export ST_AUTH=http://10.0.0.51:8080/auth/v1.0
+export ST_USER=test:tester
+export ST_KEY=testing
+
+swift stat
+swift list
+swift help
+swift help post
+swift list -lh
+swift post myC
+swift stat
+swift capabilities
+swift list
+swift list myC
+swift upload myC binaryFile.bin
+swift list
+swift stat
+swift capabilities
+swift list myC
+du -ms binaryFile.bin
+swift stat
+swift stat myC
+cd source/pythonSDS/
+
+# Start the Container Updater Service:
+swift-init start container-updater

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Provisioning" %}{% endblock %}
+
+{% block page_header %}
+  {% include "horizon/common/_page_header.html" with title=_("Provisioning Storage System") %}
+{% endblock page_header %}
+
+{% block main %}
+    {{ table.render }}
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <script src='{{ STATIC_URL }}dashboard/js/json2.js' type='text/javascript' charset='utf-8'></script>
+    <script src='{{ STATIC_URL }}dashboard/js/servermgmt.js' type='text/javascript' charset='utf-8'></script>
+{% endblock %}

@@ -1,0 +1,13 @@
+#! /bin/bash
+
+x=`cinder backend-list | awk {'if ($2 ~ /^[0-9,a-f]/) print $2'}`
+readarray -t y <<< "$x"
+for element in "${y[@]}"
+do
+    echo "Deleting $element backend id"
+    cinder backend-delete $element
+done
+
+echo "Here is the backend-list now:"
+cinder backend-list
+

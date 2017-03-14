@@ -1,0 +1,200 @@
+From 5c314370ebc3df5c1bcf474144bb13c2cd7c5d74 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Tue, 23 Dec 2014 14:50:48 +0800
+Subject: [PATCH] Made changes to cmopose virtual pool
+
+Changes include:
+1) Use real compose virtual pool API from sds instead previous fake functions.
+2) Compose pool list tables columns changing, remove/rename some columns.
+3) Create virtual pool form changes; It will display different tiers accoring to
+   the choosed storage system type.
+---
+ horizon/static/horizon/js/horizon.sds.js           |    8 +++---
+ openstack_dashboard/api/sds.py                     |   11 +++++--
+ .../dashboards/admin/composepool/forms.py          |   30 +++++++++++++++-----
+ .../dashboards/admin/composepool/tables.py         |   19 +++----------
+ .../composepool/templates/composepool/_create.html |   16 ++++++++---
+ .../dashboards/admin/composepool/urls.py           |    2 +-
+ .../dashboards/admin/composepool/views.py          |    2 +-
+ 7 files changed, 54 insertions(+), 34 deletions(-)
+
+diff --git a/horizon/static/horizon/js/horizon.sds.js b/horizon/static/horizon/js/horizon.sds.js
+index 89838bd..09a34a9 100644
+--- a/horizon/static/horizon/js/horizon.sds.js
++++ b/horizon/static/horizon/js/horizon.sds.js
+@@ -14,12 +14,12 @@ horizon.addInitFunction(function () {
+         $("#id_system_type").closest(".form-group").show();
+         break;
+ 
+-      case "ceph_tiers":
+-        $("#id_ceph_tiers").closest(".form-group").show();
++      case "ceph":
++        $("#id_ceph").closest(".form-group").show();
+         break;
+ 
+-      case "swift_tiers":
+-        $("#id_swift_tiers").closest(".form-group").show();
++      case "swift":
++        $("#id_swift").closest(".form-group").show();
+         break;
+ 
+     }
+diff --git a/openstack_dashboard/api/sds.py b/openstack_dashboard/api/sds.py
+index 95a1461..64907ae 100644
+--- a/openstack_dashboard/api/sds.py
++++ b/openstack_dashboard/api/sds.py
+@@ -125,9 +125,16 @@ def storage_tiers_get(request, tier_id):
+     return tier_data
+ 
+ 
+-#FIXME(fengqian): Pools list API is not ready in SDS.
+ def storage_pools_list(request):
+-    return []
++    return sdsclient(request).storage_pools.list()
++ 
++ 
++def storage_pools_create(request, pool, backend_name, backends,
++                         services=['volume']):
++    return sdsclient(request).storage_pools.create(pool=pool,
++                                                   backend_name=backend_name,
++                                                   backends=backends,
++                                                   services=services)
+ 
+ 
+ @memoized
+diff --git a/openstack_dashboard/dashboards/admin/composepool/forms.py b/openstack_dashboard/dashboards/admin/composepool/forms.py
+index f6a1ef0..e1c6589 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/forms.py
++++ b/openstack_dashboard/dashboards/admin/composepool/forms.py
+@@ -33,14 +33,14 @@ class CreateVirtualPoolForm(forms.SelfHandlingForm):
+ 
+     name = forms.CharField(max_length=255, label=_("Name"))
+     system_type = forms.ChoiceField(label = _('Storage System'), required = True,)
+-    ceph_tiers = forms.ChoiceField(label = _('Attached Tiers'), required = True,)
+-    swift_tiers = forms.ChoiceField(label = _('Attached Tiers'), required = True,)
++    ceph = forms.ChoiceField(label = _('Attached Tiers'), required = False,)
++    swift = forms.ChoiceField(label = _('Attached Tiers'), required = False,)
+ 
+     def __init__(self, request, *args, **kwargs):
+         super(CreateVirtualPoolForm, self).__init__(request, *args, **kwargs)
+         storage_choices = [("", _("Select storage system")),
+-                           ("ceph_tiers", _("Ceph")), 
+-                           ("swift_tiers", _("Swift"))]
++                           ("ceph", _("Ceph")), 
++                           ("swift", _("Swift"))]
+         
+         backends = api.sds.storage_backends_list(request, True)
+         tiers_choices = {}
+@@ -53,8 +53,24 @@ class CreateVirtualPoolForm(forms.SelfHandlingForm):
+             else:
+                 _tiers_choices.insert(0, ("", _("No avaliable tiers")))
+         self.fields['system_type'].choices = storage_choices
+-        self.fields['ceph_tiers'].choices = tiers_choices['ceph']
+-        self.fields['swift_tiers'].choices = tiers_choices['swift']
++        self.fields['ceph'].choices = tiers_choices['ceph']
++        self.fields['swift'].choices = tiers_choices['swift']
+ 
+     def handle(self, request, data):
+-        return True
++        pool = data.get('name')
++        #NOTE(fengqian): Default backend_name = pool_name + 'backend'
++        backend_name = "%s_backend" % pool
++        backends_name = data.get('system_type')
++        backends_tiers = data.get(backends_name)
++        backends = [dict(name=backends_name, tiers=[dict(name=backends_tiers)])]
++
++        try:
++            ret = api.sds.storage_pools_create(request, pool, backend_name, backends)
++            messages.success(request,
++                             _('Successfully compose virtual pool: %s') \
++                             % pool)
++            return ret
++        
++        except Exception:
++            exceptions.handle(request, _('Unable to compose virtual pool.'))
++            return False
+diff --git a/openstack_dashboard/dashboards/admin/composepool/tables.py b/openstack_dashboard/dashboards/admin/composepool/tables.py
+index 222dee2..0088c15 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/tables.py
++++ b/openstack_dashboard/dashboards/admin/composepool/tables.py
+@@ -85,23 +85,12 @@ class RemoveVirtualPool(tables.DeleteAction):
+ class ComposePoolTable(tables.DataTable):
+     
+     #id  = tables.Column("id", verbose_name=_("ID"))
+-    name  = tables.Column("name", verbose_name=_("Name"))
+-    storagesystem = tables.Column('storagesystem', verbose_name=_("Storage System"))
+-    tier = tables.Column("tier",
+-                         verbose_name=_("Tier"))
++    name  = tables.Column("backend_name", verbose_name=_("Backend Name"))
++    pool = tables.Column('pool', verbose_name=_("Pool"))
++    services = tables.Column("services",
++                         verbose_name=_("Services"))
+     datatype = tables.Column("datatype",
+                        verbose_name=_("Data Type"))
+-    
+-    capacity = tables.Column("capacity", verbose_name=_("Capacity Total"))
+-    used = tables.Column("used", verbose_name=_("Capacity Used"))
+-
+-    status = tables.Column(
+-        "status",
+-        verbose_name=_("Status"),
+-        status=True,
+-        status_choices=STATUS_CHOICES,
+-        display_choices=STATUS_DISPLAY_CHOICES,
+-        classes=("status",))
+ 
+     class Meta:
+         name = "composepool"
+diff --git a/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
+index d5fc873..2ec830a 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
++++ b/openstack_dashboard/dashboards/admin/composepool/templates/composepool/_create.html
+@@ -3,11 +3,19 @@
+ {% load url from future %}
+ 
+ {% block form_id %}create_virtual_pool_form{% endblock %}
+-{% block form_action %}{% url 'horizon:admin:composepool:index' %}{% endblock %}
++{% block form_action %}{% url 'horizon:admin:composepool:create' %}{% endblock %}
+ 
+-{% block modal_id %}create_virtual_pool__modal{% endblock %}
+-{% block modal-header %}{% trans "Create Virtual Pool" %}{% endblock %}
++{% block modal-header %}{% trans "Compose Virtual Pool" %}{% endblock %}
++
++{% block modal-body %}
++<div class="left">
++    <fieldset>
++    {% include "horizon/common/_form_fields.html" %}
++    </fieldset>
++</div>
++{% endblock %}
+ 
+ {% block modal-footer %}
+-  <input class="btn btn-primary pull-right" type="button" value="Attach System/Tier" onclick="window.parent.location.reload();" />
++   <input type="submit" class="btn btn-primary pull-right" value={% trans "Compose" %} />
++   <a href="{% url 'horizon:admin:composepool:index' %}" class="btn btn-default secondary cancel close">{% trans "Cancel" %}</a>
+ {% endblock %}
+diff --git a/openstack_dashboard/dashboards/admin/composepool/urls.py b/openstack_dashboard/dashboards/admin/composepool/urls.py
+index 707eac5..511b774 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/urls.py
++++ b/openstack_dashboard/dashboards/admin/composepool/urls.py
+@@ -24,5 +24,5 @@ from openstack_dashboard.dashboards.admin.composepool import views
+ 
+ urlpatterns = patterns('openstack_dashboard.dashboards.admin.composepool.views',
+     url(r'^$', views.IndexView.as_view(), name='index'),
+-    url(r'^create/$', views.CreateVirtualPool.as_view(), name='create'),
++    url(r'^create$', views.CreateVirtualPool.as_view(), name='create'),
+ )
+diff --git a/openstack_dashboard/dashboards/admin/composepool/views.py b/openstack_dashboard/dashboards/admin/composepool/views.py
+index 61b4096..3b92b19 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/views.py
++++ b/openstack_dashboard/dashboards/admin/composepool/views.py
+@@ -49,5 +49,5 @@ class IndexView(tables.DataTableView):
+ class CreateVirtualPool(forms.ModalFormView):
+     form_class = project_forms.CreateVirtualPoolForm
+     template_name = 'admin/composepool/create.html'
+-#    success_url = reverse_lazy("horizon:admin:composepool:index")
++    success_url = reverse_lazy("horizon:admin:composepool:index")
+ 
+-- 
+1.7.9.5
+

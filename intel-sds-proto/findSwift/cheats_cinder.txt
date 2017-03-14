@@ -1,0 +1,13 @@
+# Get account credentials
+#source accrc/keystoneDevStackAdmin # For Admin account
+#source accrc/keystoneDevStackDemo  # For Demo account
+
+
+# Create volume
+cinder create --display-name abcd --display-description test123 1
+
+# List volumes
+cinder list
+
+
+

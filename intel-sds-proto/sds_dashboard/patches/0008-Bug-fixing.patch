@@ -1,0 +1,314 @@
+From ad716000f5cd921c8c722d866d044bae675e9c38 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Tue, 30 Dec 2014 16:28:54 +0800
+Subject: [PATCH] Bug fixing
+
+Dashboard will crash if vsm is not configured on OpenStack node.
+Remove unused vsm APIs, only kept server related ones.
+---
+ openstack_dashboard/api/vsm.py |  256 ++++++++--------------------------------
+ 1 file changed, 52 insertions(+), 204 deletions(-)
+
+diff --git a/openstack_dashboard/api/vsm.py b/openstack_dashboard/api/vsm.py
+index 3f963d4..3b829c0 100644
+--- a/openstack_dashboard/api/vsm.py
++++ b/openstack_dashboard/api/vsm.py
+@@ -1,12 +1,5 @@
+-# vim: tabstop=4 shiftwidth=4 softtabstop=4
+-
+-# Copyright 2012 United States Government as represented by the
+-# Administrator of the National Aeronautics and Space Administration.
+-# All Rights Reserved.
+-#
+-# Copyright 2012 Openstack, LLC
+-# Copyright 2012 Nebula, Inc.
+-# Copyright (c) 2012 X.commerce, a business unit of eBay Inc.
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
+ #
+ #    Licensed under the Apache License, Version 2.0 (the "License"); you may
+ #    not use this file except in compliance with the License. You may obtain
+@@ -24,230 +17,85 @@ from __future__ import absolute_import
+ 
+ from django.conf import settings
+ 
+-from openstack_dashboard.api import base
+-from vsmclient.v1 import client as vsm_client
+-from vsmclient.v1.pool_usages import PoolUsageManager
+-from vsmclient.v1.appnodes import AppNodeManager
+-
+ import logging
+ LOG = logging.getLogger(__name__)
+ 
+ 
+-class ExtensionManager:
+-    def __init__(self, name, manager_class):
+-        self.name = name
+-        self.manager_class = manager_class
+-
+-
+-def vsmclient(request):
+-    key_vsm_pass = getattr(settings,'KEYSTONE_VSM_SERVICE_PASSWORD')
+-    key_url = getattr(settings, 'OPENSTACK_KEYSTONE_URL')
+-    c = vsm_client.Client('vsm',
+-                          key_vsm_pass,
+-                          'service',
+-                          key_url,
+-                          extensions=[ExtensionManager('PoolUsageManager',
+-                                                PoolUsageManager),
+-                                      ExtensionManager('AppNodeManager',
+-                                                AppNodeManager)])
+-    return c
+-
+-
+-class Pool(base.APIResourceWrapper):
+-    """Simple wrapper around vsmclient.vsms
+-    """
+-    _attrs = ['id', 'name', 'status', 'recipe_id', 'deleted']
+-
+-    def __init__(self, apiresource, request):
+-        super(Pool, self).__init__(apiresource)
+-        self.request = request
+-
+-
+-def create_storage_pool(request, body):
+-    return vsmclient(request).vsms.create_storage_pool(body)
+-
+-def get_storage_group_list(request):
+-    return vsmclient(request).vsms.get_storage_group_list()
+-
+-def get_pool_size_list(request):
+-    return vsmclient(request).vsms.get_pool_size_list()
+-
+-def pools_list(request, search_opts=None, all_pools=False):
+-    if search_opts is None:
+-        search_opts = {}
+-    if all_pools:
+-        search_opts['all_pools'] = True
+-    return vsmclient(request).vsms.list_storage_pool(request, search_opts)
+-
+-def pool_list(request):
+-    search_opts = {}
+-    r, pool_list = vsmclient(request).vsms.list_storage_pool(request, search_opts)
+-    return pool_list['pool']
+-
+-def pool_usages(request):
+-    return vsmclient(request).PoolUsageManager.list()
+-
+-def present_pool(request, pools):
+-    return vsmclient(request).PoolUsageManager.create(pools=pools)
++#NOTE(fengqian): If vsmclient is not installed, use a fake one.
++try:
++    from vsmclient.v1 import client as vsm_client
++    from vsmclient.v1.pool_usages import PoolUsageManager
++    from vsmclient.v1.appnodes import AppNodeManager
++
++
++    class ExtensionManager:
++        def __init__(self, name, manager_class):
++            self.name = name
++            self.manager_class = manager_class
++    
++    
++    def vsmclient(request):
++        key_vsm_pass = getattr(settings,'KEYSTONE_VSM_SERVICE_PASSWORD')
++        key_url = getattr(settings, 'OPENSTACK_KEYSTONE_URL')
++        c = vsm_client.Client('vsm',
++                              key_vsm_pass,
++                              'service',
++                              key_url,
++                              extensions=[ExtensionManager('PoolUsageManager',
++                                                    PoolUsageManager),
++                                          ExtensionManager('AppNodeManager',
++                                                    AppNodeManager)])
++        return c
++
++except ImportError:
++    def vsmclient(request):
++
++        class Server(object):
++            @property
++            def servers(self):   
++
++                class _server(object):
++                    def __init__(self):
++                        setattr(self, 'list', lambda: [])
++                        setattr(self, 'add', lambda x: x)
++                        setattr(self, 'remove', lambda x: x)
++                        setattr(self, 'get', lambda x: x)
++                        setattr(self, 'start', lambda x: x)
++                        setattr(self, 'stop', lambda x: x)
++
++                return _server()
++        
++        return Server()
+ 
+-def add_appnodes(request, ips):
+-    return vsmclient(request).AppNodeManager.create(ips=ips)
+ 
+-def del_appnode(request, appnode_id):
+-    return vsmclient(request).AppNodeManager.delete(appnode_id)
+-
+-def update_appnode(request, appnode, **kwargs):
+-    return vsmclient(request).AppNodeManager.update(appnode, **kwargs)
+-
+-def appnode_list(request,):
+-    return vsmclient(request).AppNodeManager.list()
+-
+-
+-resp = None
+-#server api
+ def add_servers(request, servers=[]):
+     return vsmclient(request).servers.add(servers)
+ 
++
+ def remove_servers(request, servers=[]):
+     return vsmclient(request).servers.remove(servers)
+ 
++
+ def get_server_list(request):
+     data = vsmclient(request).servers.list()
+     for _data in data:
+         _data.storagesystem = 'Ceph'
+     return data
+ 
++
+ def get_server(request, id):
+     return vsmclient(request).servers.get(id)
+ 
++
+ def start_server(request, servers=None):
+     """Start servers.
+        servers = [{'id': 1}, {'id': 2}]
+     """
+     return vsmclient(request).servers.start(servers)
+ 
++
+ def stop_server(request, servers=None):
+     """Stop servers.
+        servers = [{'id': 1}, {'id': 2}]
+     """
+     return vsmclient(request).servers.stop(servers)
+-
+-#zone api
+-def get_zone_list(request):
+-    return vsmclient(request).zones.list()
+-
+-# TODO return the exact response
+-def create_zone(request, opts=None):
+-    res = vsmclient(request).zones.create(opts)
+-    return resp, {'status': "succes", "message": "create zone success"}
+-
+-#cluster api
+-def get_cluster_list(request, opts=None):
+-    return vsmclient(request).vsms.get_cluster_list()
+-
+-def create_cluster(request, servers=[]):
+-    return vsmclient(request).clusters.create(servers=servers)
+-
+-#osd api
+-def osd_list(request):
+-    return vsmclient(request).osds.list()
+-
+-
+-def osd_get(request, osd_id):
+-    return vsmclient(request).osds.get(osd_id)
+-
+-
+-def osd_restart(request, osd_id):
+-    return vsmclient(request).osds.restart(osd_id)
+-
+-
+-def osd_delete(request, osd_id):
+-    return vsmclient(request).osds.delete(osd_id)
+-
+-
+-def osd_remove(request, osd_id):
+-    return vsmclient(request).osds.remove(osd_id)
+-
+-
+-def osd_restore(request, osd_id):
+-    return vsmclient(request).osds.restore(osd_id)
+-
+-def osd_status(request, paginate_opts=None):
+-    return vsmclient(request).osds.list(detailed=True, paginate_opts=paginate_opts)
+-
+-def osd_summary(request):
+-    return vsmclient(request).osds.summary()
+-
+-def mds_status(request):
+-    return vsmclient(request).mdses.list(detailed=True)
+-
+-def monitor_summary(request):
+-    return vsmclient(request).monitors.summary()
+-
+-def monitor_status(request):
+-    return vsmclient(request).monitors.list(detailed=True)
+-
+-def storage_group_summary(request):
+-    return vsmclient(request).storage_groups.summary()
+-
+-def storage_group_status(request):
+-    return vsmclient(request).storage_groups.list(detailed=True)
+-
+-def placement_group_summary(request):
+-    return vsmclient(request).placement_groups.summary()
+-
+-def placement_group_status(request, paginate_opts=None):
+-    return vsmclient(request).placement_groups.list(detailed=True,
+-                                                    paginate_opts=paginate_opts)
+-
+-def rbd_pool_summary(request):
+-    return vsmclient(request).rbd_pools.summary()
+-
+-def rbd_pool_status(request, paginate_opts=None):
+-    return vsmclient(request).rbd_pools.list(detailed=True, paginate_opts=paginate_opts)
+-
+-def mds_summary(request):
+-    return vsmclient(request).mdses.summary()
+-
+-def cluster_summary(request):
+-    return vsmclient(request).clusters.summary()
+-
+-def vsm_summary(request):
+-    return vsmclient(request).vsms.summary()
+-
+-def pool_status(request):
+-    return vsmclient(request).storage_pools.list(detailed=True)
+-
+-
+-#device api
+-def device_list(request):
+-    return vsmclient(request).devices.list()
+-
+-
+-#license api
+-def license_create(request, value=True):
+-    return vsmclient(request).licenses.license_create(value)
+-
+-def license_get(request):
+-    return vsmclient(request).licenses.license_get()
+-
+-def license_update(request, value):
+-    return vsmclient(request).licenses.license_update(value)
+-
+-def get_setting_dict(request,):
+-    # TODO
+-    setting_list = vsmclient(request).vsm_settings.list()
+-    setting_dict = {}
+-    for setting in setting_list:
+-        setting_dict.setdefault(setting.name, setting.value)
+-    return setting_dict
+-
+-def get_settings(request,):
+-    return vsmclient(request).vsm_settings.list()
+-
+-def get_setting_by_name(request, name):
+-    return vsmclient(request).vsm_settings.get(name)
+-
+-def update_setting(request, name, value):
+-    return vsmclient(request).vsm_settings.create({'name': name, 'value':value})
+-
+-- 
+1.7.9.5
+

@@ -1,0 +1,454 @@
+From edcd8f6c46d81a6397c73f35dd17edc77f60e07c Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Mon, 15 Dec 2014 10:40:52 +0800
+Subject: [PATCH 1/5] Add SDS/VSM APIs in openstack_dashboard api
+
+Upload SDS/VSM APIs, while VSM APIs mainly be used for Ceph storage
+provisioning. SDS APIs inculde storage dicover capability, compose
+pool and Swift provisioning.
+---
+ openstack_dashboard/api/__init__.py |    4 +
+ openstack_dashboard/api/sds.py      |  147 ++++++++++++++++++++
+ openstack_dashboard/api/vsm.py      |  253 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 404 insertions(+)
+ create mode 100644 openstack_dashboard/api/sds.py
+ create mode 100644 openstack_dashboard/api/vsm.py
+
+diff --git a/openstack_dashboard/api/__init__.py b/openstack_dashboard/api/__init__.py
+index 9e7ad14..782b49d 100644
+--- a/openstack_dashboard/api/__init__.py
++++ b/openstack_dashboard/api/__init__.py
+@@ -43,9 +43,11 @@ from openstack_dashboard.api import network
+ from openstack_dashboard.api import neutron
+ from openstack_dashboard.api import nova
+ from openstack_dashboard.api import sahara
++from openstack_dashboard.api import sds
+ from openstack_dashboard.api import swift
+ from openstack_dashboard.api import trove
+ from openstack_dashboard.api import vpn
++from openstack_dashboard.api import vsm
+ 
+ 
+ __all__ = [
+@@ -64,4 +66,6 @@ __all__ = [
+     "trove",
+     "vpn",
+     "sahara",
++    "sds",
++    "vsm",
+ ]
+diff --git a/openstack_dashboard/api/sds.py b/openstack_dashboard/api/sds.py
+new file mode 100644
+index 0000000..95a1461
+--- /dev/null
++++ b/openstack_dashboard/api/sds.py
+@@ -0,0 +1,147 @@
++# Copyright (c) 2014 Intel Corporation
++# Copyright (c) 2014 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from __future__ import absolute_import
++
++import logging
++
++from django.conf import settings
++
++from horizon import exceptions
++from horizon.utils.memoized import memoized  # noqa
++from sdsclient.v1 import client as sds_client
++from sdsclient.v1.contrib import list_extensions as sds_list_extensions
++
++from openstack_dashboard.api import base
++
++LOG = logging.getLogger(__name__)
++
++
++#NOTE(fengqian): SDS only have API v1
++VERSIONS = base.APIVersionManager("sds", preferred_version=1)
++VERSIONS.load_supported_version(1, {"client": sds_client, "version": 1})
++
++
++@memoized
++def sdsclient(request):
++    api_version = VERSIONS.get_active_version()    
++    insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
++    cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
++
++    try:    
++        sds_url = base.url_for(request, "sds")
++    except exceptions.ServiceCatalogException:
++        LOG.error("No sds service")
++        raise
++
++    LOG.debug('sdsclient create connection use token "%s", url "%s"' % \
++              (request.user.token.id, sds_url))
++
++    ret = api_version['client'].Client(request.user.username,
++                                       request.user.token.id,
++                                       project_id=request.user.tenant_id,
++                                       auth_url=sds_url,
++                                       insecure=insecure,
++                                       cacert=cacert,
++                                       http_log_debug=settings.DEBUG)
++
++    ret.client.auth_token = request.user.token.id
++    ret.client.management_url = sds_url
++    return ret
++
++
++def discover_storage(request, ip_cidr, storage_type, metadata):
++    discover_data = sdsclient(request).storage_discover.discover(ip_cidr,
++                                                                 storage_type,
++                                                                 metadata)
++    return discover_data
++
++
++#FIXME(fengqian): We have to grather all need data here. It is a little urgly and
++#need to be fixed in the future.
++def storage_discovered_data(request):
++    data = []
++    raw_data = storage_backends_list(request, True)
++    for _raw_data in raw_data:
++        for _tier in _raw_data.tiers:
++            storage_specs = _raw_data.capability_specs.copy()
++            storage_specs['storagesystem'] = _raw_data.name
++            storage_specs['tier'] = _tier.get('name')
++            storage_specs['id'] = _tier.get('id')
++            storage_specs['total'] = " %s  Kb" % \
++                                    storage_specs.pop('capacity_total_kb', 0)
++
++            capability_specs = _tier.get('capability_specs', None)
++            if capability_specs is not None:
++                storage_specs['used'] = "%s  Kb" % \
++                                capability_specs.get('capacity_used_kb', 0)
++
++                if capability_specs.get('data_protection', None) == 'replication':
++                    storage_specs['protection'] = "Replication(min_size: %s, " % \
++                            capability_specs.get('replication_min_size') + \
++                            "size: %s)" % capability_specs.get('replication_size')
++
++                if capability_specs.get('data_protection', None) == \
++                                                                'erasure_code':
++                    storage_specs['protection'] ="Erasure(data: %s, " % \
++                        capability_specs.get('k') + "parity: %s " % \
++                        capability_specs.get('m') + "algo: %s)" % \
++                        capability_specs.get('technique')
++
++            data.append(storage_specs)
++
++    return [base.APIDictWrapper(_data) for _data in data]
++
++
++def storage_backends_list(request, detailed=False):
++    backends_data = sdsclient(request).storage_backends.list(detailed=detailed)
++    return backends_data
++
++
++def storage_backends_get(request, backend_id):
++    backends_data = sdsclient(request).storage_backends.get(backend_id)
++    return backends_data
++
++
++def storage_tiers_list(request, detailed=False):
++    tiers_data = sdsclient(request).storage_tiers.list()
++    return tiers_data
++
++
++def storage_tiers_get(request, tier_id):
++    tier_data = sdsclient(request).storage_tiers.get(tier_id)
++    return tier_data
++
++
++#FIXME(fengqian): Pools list API is not ready in SDS.
++def storage_pools_list(request):
++    return []
++
++
++@memoized
++def list_extensions(request):
++    return sds_list_extensions.ListExtManager(sdsclient(request))\
++        .show_all()
++
++
++@memoized
++def extension_supported(request, extension_name):
++    """This method will determine if SDS supports a given extension name.
++    """
++    extensions = list_extensions(request)
++    for extension in extensions:
++        if extension.name == extension_name:
++            return True
++    return False
+diff --git a/openstack_dashboard/api/vsm.py b/openstack_dashboard/api/vsm.py
+new file mode 100644
+index 0000000..3f963d4
+--- /dev/null
++++ b/openstack_dashboard/api/vsm.py
+@@ -0,0 +1,253 @@
++# vim: tabstop=4 shiftwidth=4 softtabstop=4
++
++# Copyright 2012 United States Government as represented by the
++# Administrator of the National Aeronautics and Space Administration.
++# All Rights Reserved.
++#
++# Copyright 2012 Openstack, LLC
++# Copyright 2012 Nebula, Inc.
++# Copyright (c) 2012 X.commerce, a business unit of eBay Inc.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++
++from __future__ import absolute_import
++
++from django.conf import settings
++
++from openstack_dashboard.api import base
++from vsmclient.v1 import client as vsm_client
++from vsmclient.v1.pool_usages import PoolUsageManager
++from vsmclient.v1.appnodes import AppNodeManager
++
++import logging
++LOG = logging.getLogger(__name__)
++
++
++class ExtensionManager:
++    def __init__(self, name, manager_class):
++        self.name = name
++        self.manager_class = manager_class
++
++
++def vsmclient(request):
++    key_vsm_pass = getattr(settings,'KEYSTONE_VSM_SERVICE_PASSWORD')
++    key_url = getattr(settings, 'OPENSTACK_KEYSTONE_URL')
++    c = vsm_client.Client('vsm',
++                          key_vsm_pass,
++                          'service',
++                          key_url,
++                          extensions=[ExtensionManager('PoolUsageManager',
++                                                PoolUsageManager),
++                                      ExtensionManager('AppNodeManager',
++                                                AppNodeManager)])
++    return c
++
++
++class Pool(base.APIResourceWrapper):
++    """Simple wrapper around vsmclient.vsms
++    """
++    _attrs = ['id', 'name', 'status', 'recipe_id', 'deleted']
++
++    def __init__(self, apiresource, request):
++        super(Pool, self).__init__(apiresource)
++        self.request = request
++
++
++def create_storage_pool(request, body):
++    return vsmclient(request).vsms.create_storage_pool(body)
++
++def get_storage_group_list(request):
++    return vsmclient(request).vsms.get_storage_group_list()
++
++def get_pool_size_list(request):
++    return vsmclient(request).vsms.get_pool_size_list()
++
++def pools_list(request, search_opts=None, all_pools=False):
++    if search_opts is None:
++        search_opts = {}
++    if all_pools:
++        search_opts['all_pools'] = True
++    return vsmclient(request).vsms.list_storage_pool(request, search_opts)
++
++def pool_list(request):
++    search_opts = {}
++    r, pool_list = vsmclient(request).vsms.list_storage_pool(request, search_opts)
++    return pool_list['pool']
++
++def pool_usages(request):
++    return vsmclient(request).PoolUsageManager.list()
++
++def present_pool(request, pools):
++    return vsmclient(request).PoolUsageManager.create(pools=pools)
++
++def add_appnodes(request, ips):
++    return vsmclient(request).AppNodeManager.create(ips=ips)
++
++def del_appnode(request, appnode_id):
++    return vsmclient(request).AppNodeManager.delete(appnode_id)
++
++def update_appnode(request, appnode, **kwargs):
++    return vsmclient(request).AppNodeManager.update(appnode, **kwargs)
++
++def appnode_list(request,):
++    return vsmclient(request).AppNodeManager.list()
++
++
++resp = None
++#server api
++def add_servers(request, servers=[]):
++    return vsmclient(request).servers.add(servers)
++
++def remove_servers(request, servers=[]):
++    return vsmclient(request).servers.remove(servers)
++
++def get_server_list(request):
++    data = vsmclient(request).servers.list()
++    for _data in data:
++        _data.storagesystem = 'Ceph'
++    return data
++
++def get_server(request, id):
++    return vsmclient(request).servers.get(id)
++
++def start_server(request, servers=None):
++    """Start servers.
++       servers = [{'id': 1}, {'id': 2}]
++    """
++    return vsmclient(request).servers.start(servers)
++
++def stop_server(request, servers=None):
++    """Stop servers.
++       servers = [{'id': 1}, {'id': 2}]
++    """
++    return vsmclient(request).servers.stop(servers)
++
++#zone api
++def get_zone_list(request):
++    return vsmclient(request).zones.list()
++
++# TODO return the exact response
++def create_zone(request, opts=None):
++    res = vsmclient(request).zones.create(opts)
++    return resp, {'status': "succes", "message": "create zone success"}
++
++#cluster api
++def get_cluster_list(request, opts=None):
++    return vsmclient(request).vsms.get_cluster_list()
++
++def create_cluster(request, servers=[]):
++    return vsmclient(request).clusters.create(servers=servers)
++
++#osd api
++def osd_list(request):
++    return vsmclient(request).osds.list()
++
++
++def osd_get(request, osd_id):
++    return vsmclient(request).osds.get(osd_id)
++
++
++def osd_restart(request, osd_id):
++    return vsmclient(request).osds.restart(osd_id)
++
++
++def osd_delete(request, osd_id):
++    return vsmclient(request).osds.delete(osd_id)
++
++
++def osd_remove(request, osd_id):
++    return vsmclient(request).osds.remove(osd_id)
++
++
++def osd_restore(request, osd_id):
++    return vsmclient(request).osds.restore(osd_id)
++
++def osd_status(request, paginate_opts=None):
++    return vsmclient(request).osds.list(detailed=True, paginate_opts=paginate_opts)
++
++def osd_summary(request):
++    return vsmclient(request).osds.summary()
++
++def mds_status(request):
++    return vsmclient(request).mdses.list(detailed=True)
++
++def monitor_summary(request):
++    return vsmclient(request).monitors.summary()
++
++def monitor_status(request):
++    return vsmclient(request).monitors.list(detailed=True)
++
++def storage_group_summary(request):
++    return vsmclient(request).storage_groups.summary()
++
++def storage_group_status(request):
++    return vsmclient(request).storage_groups.list(detailed=True)
++
++def placement_group_summary(request):
++    return vsmclient(request).placement_groups.summary()
++
++def placement_group_status(request, paginate_opts=None):
++    return vsmclient(request).placement_groups.list(detailed=True,
++                                                    paginate_opts=paginate_opts)
++
++def rbd_pool_summary(request):
++    return vsmclient(request).rbd_pools.summary()
++
++def rbd_pool_status(request, paginate_opts=None):
++    return vsmclient(request).rbd_pools.list(detailed=True, paginate_opts=paginate_opts)
++
++def mds_summary(request):
++    return vsmclient(request).mdses.summary()
++
++def cluster_summary(request):
++    return vsmclient(request).clusters.summary()
++
++def vsm_summary(request):
++    return vsmclient(request).vsms.summary()
++
++def pool_status(request):
++    return vsmclient(request).storage_pools.list(detailed=True)
++
++
++#device api
++def device_list(request):
++    return vsmclient(request).devices.list()
++
++
++#license api
++def license_create(request, value=True):
++    return vsmclient(request).licenses.license_create(value)
++
++def license_get(request):
++    return vsmclient(request).licenses.license_get()
++
++def license_update(request, value):
++    return vsmclient(request).licenses.license_update(value)
++
++def get_setting_dict(request,):
++    # TODO
++    setting_list = vsmclient(request).vsm_settings.list()
++    setting_dict = {}
++    for setting in setting_list:
++        setting_dict.setdefault(setting.name, setting.value)
++    return setting_dict
++
++def get_settings(request,):
++    return vsmclient(request).vsm_settings.list()
++
++def get_setting_by_name(request, name):
++    return vsmclient(request).vsm_settings.get(name)
++
++def update_setting(request, name, value):
++    return vsmclient(request).vsm_settings.create({'name': name, 'value':value})
++
+-- 
+1.7.9.5
+

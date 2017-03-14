@@ -1,0 +1,3 @@
+[oslo.config.opts]
+keystonemiddleware.auth_token = keystonemiddleware.opts:list_auth_token_opts
+

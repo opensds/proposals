@@ -1,0 +1,50 @@
+From 422a0e4e2dd2b0eb8e83fe8cdf8a23970bb718a8 Mon Sep 17 00:00:00 2001
+From: Fegnqian Gao <fengqian.gao@intel.com>
+Date: Wed, 24 Dec 2014 14:14:09 +0800
+Subject: [PATCH] Bug fixing of compose pool and remove unnecessary info for
+ discover
+
+1) Compose pool bug description: In create pool form, UI will crash if
+   no tiers info to the choosed storage system.
+2) remove unnecessary info for discover: In sds backend, use cephx for
+   authentication, so metadata is not required from dashboard.
+---
+ .../dashboards/admin/composepool/forms.py          |    2 +-
+ .../dashboards/admin/discovercapability/forms.py   |    7 +++----
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/openstack_dashboard/dashboards/admin/composepool/forms.py b/openstack_dashboard/dashboards/admin/composepool/forms.py
+index e1c6589..607e4fe 100644
+--- a/openstack_dashboard/dashboards/admin/composepool/forms.py
++++ b/openstack_dashboard/dashboards/admin/composepool/forms.py
+@@ -43,7 +43,7 @@ class CreateVirtualPoolForm(forms.SelfHandlingForm):
+                            ("swift", _("Swift"))]
+         
+         backends = api.sds.storage_backends_list(request, True)
+-        tiers_choices = {}
++        tiers_choices = dict(ceph=[], swift=[])
+         for _backend in backends:
+             tiers_choices[_backend.name] = [(tier['id'], tier['name']) for \
+                                             tier in _backend.tiers]
+diff --git a/openstack_dashboard/dashboards/admin/discovercapability/forms.py b/openstack_dashboard/dashboards/admin/discovercapability/forms.py
+index 15df316..df19cf3 100644
+--- a/openstack_dashboard/dashboards/admin/discovercapability/forms.py
++++ b/openstack_dashboard/dashboards/admin/discovercapability/forms.py
+@@ -54,11 +54,10 @@ class Discover(forms.SelfHandlingForm):
+             #FIXME(fengqian): For now, two type of system could be discovered,
+             #ceph and swift. But UI doesn't provide the input of user and
+             #password. So, hard code is added here.
+-            #We use Cephx now, so the user name or fsid is not
+-            #necessary, just set it do default or else it will return failure.
++            #For ceph, We use Cephx now, so the user name or fsid is not
++            #necessary, just set it to empty.
+             #For swift, fsid is the password.
+-            metadata_dict = {'ceph': {"user": "cinder", "fsid": \
+-                                      "9e9eaf21-8e43-4465-851c-e8d9a1b00956"},
++            metadata_dict = {'ceph': {},
+                              'swift': {"user": "test:tester",
+                                        "fsid": "testing"}}
+ 
+-- 
+1.7.9.5
+

@@ -1,0 +1,25 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+{% load url from future %}
+
+{% block form_id %}storagedetails_form{% endblock %}
+
+{% block modal-header %}{% trans "Storage System Details" %}{% endblock %}
+
+{% block modal-body %}
+
+<pre class="data">
+{{ content }}
+</pre>
+
+<div class="left">
+    <fieldset>
+    {% include "horizon/common/_form_fields.html" %}
+    </fieldset>
+</div>
+{% endblock %}
+
+
+{% block modal-footer %}
+   <a href="{% url 'horizon:admin:discovercapability:index' %}" class="btn btn-default secondary cancel close">{% trans "OK" %}</a>
+{% endblock %}

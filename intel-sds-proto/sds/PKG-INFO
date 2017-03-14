@@ -1,0 +1,24 @@
+Metadata-Version: 1.1
+Name: sds
+Version: 2015.1.dev346.g837ff0e
+Summary: OpenStack Block Storage
+Home-page: http://www.openstack.org/
+Author: OpenStack
+Author-email: openstack-dev@01.org
+License: UNKNOWN
+Description: The Choose Your Own Adventure README for SDS
+        ===============================================
+        
+        SDS is a project that defines services for storage management by taking advantage of existing 
+        OpenStack projects and features.  Use the following resources to learn more:
+        * `Official SDS documentation <http://01.org/>`_
+
+Platform: UNKNOWN
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
