@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- 由产品CMO配置此文件 -->
+<productConfig version="1.0">
+    <!--==1.配置基本信息===============================================================================-->
+    <!--"注:groupId+artifactId+version能唯一标识此产品/子系统/组件"-->
+    
+    <!--"groupId:    产品/子系统/组件所属产品线的名称:(无线:Wireless;网络:Network;中研:CentralRD;核心网:CoreNet;业软:ApplicationAndSoftware)"-->
+    <!--"artifactId: 产品/子系统/组件的名称,不是整个产品的名称(当产品无子系统或组件时与产品名称一致即可),与scm.xml中svn节点的name属性保持一致"-->
+    <!--"version:    产品/子系统/组件的版本(可以到VxxxRxxxCxxxBxxxSPxx)"-->
+    <groupId>ReplicationDirector Agent</groupId>
+    <artifactId>Storage</artifactId>
+    <version>V100R003C00</version>
+    
+    <!--==2.配置依赖关系===============================================================================-->
+    <!--"此产品构建依赖的平台列表(含公共平台/产品线平台/PDT内部平台，如：dopra/cgp/uscdb)"-->
+    <!--platforms-->
+        <!--"依赖多个平台时，使用多个<platform>节点配置"-->
+        <!--platform id="iMAP_V3R1C02">
+          <groupId>CentralRD</groupId>
+          <artifactId>iMAP</artifactId>
+          <version>V300R001C02</version>
+        </platform>
+    </platforms-->
+    
+    <!--"配置此产品需要的构建环境，每种环境<environment>下只有1个<envTemplate>节点"-->
+    <environments>
+        <environment name="RDV200R001C00_Agent_Compile_Windows">
+            <envTemplate>V200R001C00_Agent_Windows_01</envTemplate>
+        </environment>
+
+        <environment name="RDV200R001C00_Agent_Compile_Suse11">
+            <!--"1).根据VM模板ID安装OS"-->
+            <!--用于编译打包和其它的静态检查-->
+            <envTemplate>V200R001C00_Agent_Suse11_01</envTemplate>
+            <!--"2).配置依赖的平台"-->
+            <!--platforms refIds="iMAP_V3R1C02"/-->
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Suse10">
+            <envTemplate>V200R001C00_Agent_Suse10_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_AIX5">
+            <envTemplate>V200R001C00_Agent_AIX53_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_AIX6">
+            <envTemplate>V200R001C00_Agent_AIX61_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_HP1131">
+            <envTemplate>V200R001C00_Agent_HP1131_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_HP1123">
+            <envTemplate>V200R001C00_Agent_HP1123_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Puhua">
+            <envTemplate>V200R001C00_Agent_Puhua_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_OLE5">
+            <envTemplate>V200R001C00_Agent_OEL5_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_OLE6">
+            <envTemplate>V200R001C00_Agent_OEL6_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Redhat5">
+            <envTemplate>V200R001C00_Agent_Redhat5_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Redhat6">
+            <envTemplate>V200R001C00_Agent_Redhat6_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Redhat7">
+            <envTemplate>V200R001C00_Agent_Redhat7_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Rocky4">
+            <envTemplate>V200R001C00_Agent_Rocky4_01</envTemplate>
+        </environment>
+
+        <environment name="RDV200R001C00_Agent_Compile_Rocky6">
+            <envTemplate>V200R001C00_Agent_Rocky6_01</envTemplate>
+        </environment>
+        
+        <environment name="RDV200R001C00_Agent_Compile_Solaris">
+            <envTemplate>V200R001C00_Agent_Solaris_01</envTemplate>
+        </environment>
+    </environments>
+</productConfig>

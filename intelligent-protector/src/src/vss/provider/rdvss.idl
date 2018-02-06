@@ -1,0 +1,34 @@
+// rdvss.idl : rdvss 的 IDL 源
+//
+
+// 此文件将由 MIDL 工具处理以
+// 产生类型库(rdvss.tlb)和封送处理代码。
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(53312750-4FED-4735-ADAB-CFC41948BB32),
+	helpstring("Iprovider 接口"),
+	pointer_default(unique)
+]
+interface Iprovider : IUnknown{
+};
+[
+	uuid(1FF073AC-1FB7-4710-9EC9-8D8FAA950280),
+	version(1.0),
+	helpstring("rdvss 1.0 类型库")
+]
+library rdvssLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(0A267F0B-08BB-461B-9EE4-174579645F85),
+		helpstring("provider Class")
+	]
+	coclass provider
+	{
+		[default] interface Iprovider;
+	};
+};

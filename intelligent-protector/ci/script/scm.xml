@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--?xml version="1.0" encoding="GBK"?-->
+<!-- 由产品CMO配置此文件 -->
+<projectconfig>
+	<!--配置库属性名[key]不能有中文，如果配置库属性值[value]包含中中文,请确保此配置文件的编码设置:encoding="GBK"-->
+	<scm>
+		<current>
+		 <!-- name 与 ProductConfig.xml的<component>的artifactId的值一致-->
+		 <!-- 一个子系统有多个配置库，则配置多个节点-->
+		 <!-- 代码标签(ClearCase为cc_viewTag，SVN为svn_revision)：
+			  代码标签为空时，表示在研版本，每次构建取最新代码，CI工程将定时构建；
+			  代码标签不为空，表示历史版本，每次按代码标签取代码构建，由依赖本平台的产品CI触发构建-->
+		
+         <!-- retryTimes表示下载失败的重试次数，不设置或者设置错误的值（如非数值或者负数等），则使用默认值3。注意若设置为0，则表示不重试。-->
+         <!-- retryIntervalMinutes表示两次重试之间的时间间隔，单位分钟，不设置或者设置错误的值（如非数值或者负数等），则使用默认值1。注意若设置为0，则表示重试时不用等待时间。-->
+         <!--deleteBeforeLastRetry表示最后一次重试前是否要删除原来的下载内容，不设置或者设置错误的值（除了true/false以外的值），则使用默认值false,表示不删除-->
+			
+			<svn name="Agent" retryTimes="3" retryIntervalMinutes="1" deleteBeforeLastRetry="false">
+				<property  key="svn_server_url" value="http://szxsvn16-rd:6801/svn/ITPL_RD_V1R3_SVN/V100R003C00/code/trunk/Agent"/>
+				<property  key="svn_name" value="w90006164"/>
+				<property  key="svn_password" value="ed0a0975fe83eb376f1555d5f2c0b90f"/>
+				<property  key="svn_revision" value=""/>  
+			</svn>
+			
+	
+		</current>
+		<base>
+			<svn name="Agent" retryTimes="3" retryIntervalMinutes="1" deleteBeforeLastRetry="false">
+				<property  key="svn_server_url" value="http://szxsvn16-rd:6801/svn/ITPL_RD_V1R3_SVN/V100R003C00/code/trunk/Agent"/>
+				<property  key="svn_name" value="w90006164"/>
+				<property  key="svn_password" value="ed0a0975fe83eb376f1555d5f2c0b90f"/>	
+				<property  key="svn_revision" value="10818"/>  
+			</svn>
+		</base>
+	</scm>
+</projectconfig>

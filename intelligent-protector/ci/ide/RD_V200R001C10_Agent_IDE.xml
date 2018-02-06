@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="GB2312"?>
+<ciCloudJob>
+    <scm>
+		<config>
+			<customDown name="ciconfig" plugin="gitdownload" retryTimes="0">
+				<param name="remoteRepository" value="git@code-cd.huawei.com:zWX197446/AgentCIConf.git" />
+				<param name="gitBranch" value=""/>
+				<param name="gitTag" value="" />
+			</customDown>
+		</config>	
+		<current>
+			<customDown name="." plugin="gitdownload" retryTimes="0">
+				<param name="remoteRepository" value="git@code-cd.huawei.com:BCManager/eReplication_Agent.git" />
+				<param name="gitBranch" value="appGroup"/>
+				<param name="gitTag" value="" />
+			</customDown>
+		</current> 
+	</scm>
+    
+    <agentTasks>
+        <agentTask  name ="Compile_on_Windows" failOnError="true" agentLabel="V200R001C10_Agent_Windows_01" parallel="true">    
+            <task plugin="compile" name="compile_Agent_Windows" module="" depends="."/>
+        </agentTask>
+        <agentTask  name ="pclint_check_all" agentLabel="V200R001C10_Agent_Windows_01" parallel="false">
+			<task plugin="customtask" name="unzipOpenSrc" depends="."/>
+			<task plugin="customtask" name="makeSqlite" depends="."/>
+			<task plugin="customtask" name="makeSnmp" depends="."/>
+            <task plugin="pclint" name="pclint_all" module="AgentModule_FOR_PCLINT"  depends="."/>    
+        </agentTask>
+        <agentTask  name ="ss_check" agentLabel="V200R001C10_Agent_Windows_01" parallel="true">        
+            <task plugin="sourcemonitor" name="sourcemonitor_c" module="AgentModule_FOR_SourceMonitorPrivate"  depends="."/>
+        </agentTask>
+    </agentTasks>
+
+    <!-- 定义构建流程 -->
+    <schedule>
+        <!--schedule下面可以定义一个downTasks和多个concurrent、composite、agentTask节点-->
+        <downTasks name="DownloadCode" failOnError="true">
+		    <downTask name="ciconfig" />
+			<downTask name="."/>	
+		</downTasks>
+		
+        <concurrent name="StaticCheck">
+            <agentTask name="pclint_check_all" />
+            <agentTask name="ss_check" />  
+        </concurrent>
+        
+        <!--concurrent name="Compile_Agent">
+            <agentTask name="Compile_on_Windows" />  
+        </concurrent-->
+        
+    </schedule>
+</ciCloudJob>
