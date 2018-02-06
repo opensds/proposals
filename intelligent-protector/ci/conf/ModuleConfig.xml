@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- "由产品CIE配置此文件" -->
+
+<!-- "以下配置模块信息，用于静态检查,如：sourcemonitor、cct、simian。" -->
+<moduleConfig version="1.0">
+    <!-- "兼容pattern配置模式下的模块路径公共配置声明" -->
+    <modulePatternPublicSet>
+
+    </modulePatternPublicSet>
+    
+    <modules>
+        <!-- "用户配置的多组模块信息，用于生成Pattern以及静态检查任务" -->       
+        <!--agent module-->
+        <module name="AgentModule_FOR_PCLINT" language="c++" layerpath="/AgentModule_FOR_PCLINT" owner="w90006164">
+            <!--include name="RDAgent_V1R3_Code/src/**/inc/*.h"/-->
+            <include name="Agent/src/inc/**/*"/>
+            <include name="Agent/src/src/**/*"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module>
+
+        <module name="AgentModule_Shell" language="shell" layerpath="/AgentModule_Shell" owner="w90006164">
+            <include name="Agent/bin/shell/*.*"/>            
+        </module>
+        
+        <module name="AgentModule_FOR_SourceM" language="c++" layerpath="/AgentModule_FOR_SourceM" owner="w90006164">
+            <include name="Agent/src/inc/**/*.*"/>
+            <include name="Agent/src/src/**/*.*"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module> 
+		
+	<module name="AgentModule_FOR_SourceMonitorPrivate" language="c++" layerpath="/SourceMonitorPrivate" owner="w90006164">
+            <include name="Agent/src/inc/**/*.*"/>
+            <include name="Agent/src/src/**/*.*"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module>
+        
+        <module name="AgentModule_FOR_simian" language="c++" layerpath="/AgentModule_FOR_simian" owner="w90006164">
+            <include name="Agent/src/inc/**/*.*"/>
+            <include name="Agent/src/src/**/*.*"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module>
+
+        <!--CCT Agent compare all file-->
+        <module name="AgentModule_for_cct" language="c++" layerpath="/AgentModule_for_cct" owner="w90006164">
+            <include name="Agent/src/inc/**/*.*"/>
+            <include name="Agent/src/src/**/*.*"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module>
+    </modules>
+    
+    <lintModuleSet defaultExtends="false">
+        <module name="AgentModule_FOR_PCLINT" lntFile="Agent/ci/rule/pclint/agent.lnt"  language="c++" layerpath="/AgentModule_FOR_PCLINT" owner="w90006164">
+            <include name="Agent/src/src/**/*.cpp"/>
+            <include name="Agent/src/src/**/*.c"/>
+            <exclude name="Agent/src/src/sslpatch/*"/>
+            <exclude name="Agent/src/esn/**/*"/>
+        </module>
+    </lintModuleSet>
+	
+	<lintModuleSet defaultExtends="false">
+        <module name="AgentModule_FOR_PCLINTPrivate" lntFile="RDAgent_V2R1_Code/ci/rule/pclint/agent.lnt"  language="c++" layerpath="/PCLINTPrivate" owner="w90006164">
+            <include name="RDAgent_V2R1_Code/src/src/**/*.cpp"/>
+            <include name="RDAgent_V2R1_Code/src/src/**/*.c"/>
+            <exclude name="RDAgent_V2R1_Code/src/src/sslpatch/*"/>
+            <exclude name="RDAgent_V2R1_Code/src/esn/**/*"/>
+        </module>
+    </lintModuleSet>
+    
+    <paths>
+        <!--说明：
+        1、只支持相对路径，id名称自定义，在CIConfig.xml中引用
+        2、path仅支持pathelement，fileset，path作为子节点
+        3、pathelement仅支持path和location
+        4、path引用前面定义好的path id（refid）-->
+        <!--
+        <path id="path.class.backend.plat">
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Base-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Core-SDK-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-HW-HVS-SRA-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-HW-T-V1-SRA-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-HW-T-XVE-SRA-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Recovery-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Recovery-Report-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Report-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-REST-Util-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-SOAP-Util-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Storage-Base-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-Topology-Bundle/target/classes/com"/>
+            <pathelement location="code/src/Server/RD-Server-Plat/DRM-HW-VIS-SRA-Bundle/target/classes/com"/>
+        </path>
+        -->
+        <path id="path.Csec_Check_Agent">
+            <pathelement path="Agent/src" />
+        </path>
+
+        <path id="path.code.UltraAgentCCTOrg">
+            <pathelement path="Agent_old/agent" />
+        </path>
+
+        <path id="path.code.UltraAgent">
+            <pathelement path="Agent" />
+        </path>
+
+        <!--path id="path.code.UltraAgentPCLINT">   
+            <fileset dir="Agent/src">
+                <include name="**/*.cpp" />      
+                <include name="**/*.c" />
+                <exclude name="rdvss/**" />      
+                <exclude name="requester/**" />
+                <exclude name="securec/src/*.c" />
+                <exclude name="securec/src/*.inl" />   
+            </fileset>
+        </path-->
+    </paths>
+
+
+</moduleConfig>

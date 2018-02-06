@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<buildCloudParam>
+  <baseconfig>
+	<property name="useCloudConfig" value="true" />
+	<property name="productName" value="RD_V200R001C10" />
+	<property name="productVersion" value="RD_V200R001C10" />
+	<property name="resourceOwnerKey" value="RD_V200R001C10" />
+	<property name="resourceAccessToken" value="RD_V200R001C10" />
+	<property name="isIncreaseBuild" value="true" />
+	<!--property name="codeShareName" value="" />
+	<property name="codeShareOnPom" value="false" /-->
+	<property name="isPublishToPVM" value="false" />
+	<property name="isAlwaysGetRelease" value="false" />
+	<property name="pbiName" value="RD_V200R001C10" />
+	<property name="pbiId" value="" /> 
+  </baseconfig>
+  
+  <!--定义待依赖的平台，artifactId为自定义的平台id，另外参数为平台的名称，版本-->
+  <platforms>
+    <platform artifactId="ICP_CI2.1" platformName="ICP_CI" version="2.0" />
+  </platforms>
+  <advancedconfig>
+    <!--是否在pom上保留上次的构建结果，默认为true-->
+    <property name="isKeepLastResult" value="false" />
+	<!--useFullSync只在增量构建下起效，如果useFullSync配置为true，则增量构建时候agent同步代码采用全量同步策略，反之采用增量同步策略，该配置项不区分大小写-->
+	<property name="useFullSync" value="true" />
+	<!--  选择所使用的云构建服务地域,与Router上对应 Shenzhen SZX ;Shanghai SHA; Dongguan DNG; Beijing PEK; Chengdu NCTU; Xi'an XIY ; Wuhan WUH ; Hangzhou HGH-->
+	<property name="specialLocation" value="NCTU"/>
+  </advancedconfig>
+  <!--定义环境变量，格式如下-->
+  <environmentVariables>
+  <!--
+    <environmentVariable name="ant1_4_HOME" value="C:/ant 1.4" />
+	-->
+  </environmentVariables>
+</buildCloudParam>

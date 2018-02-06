@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<regex>
+	<tool name="compile">
+		<!-- as :../../../OMP_BBSP/SRC/L3P/usrsecurity/omshl_security_snmp.c:7846: error: `ERR_SECURITY_NOT_PS_WORK_MEMBER' undeclared (first use in this function) "--> 
+		<expression type="gcc" loglevel="warning" prevline="3" nextline="3">
+		   <![CDATA[^(((\S.*):(\d+):(\d+):)|((\S.*):(\d+):)) (((\S.*)? )?(warning)): (.*)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(((.*):(\d+):(\d+):)|((\S.*):(\d+):)) (((\S.*)? )?(error)): (.*)$]]>
+		</expression>
+		<!-- as : "C:\\rTools\\WindRiver\\vxworks-6.4\\host\\x86-win32\\bin\\make.exe: *** [target_vxWorks] Error 2"
+		          "make: *** [DrvCommon/NonDebug/Objects/CDrvBerPub.o] Error 1"-->
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+		   <![CDATA[^((.*)?(((make.exe|make)(\[[0-9]+\])?):\s).*\s(Error)\s([+-]?[0-9]+|0[Xx][0-9A-Fa-f]+)*)$]]>
+		</expression>
+
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(((\S.*):(\d+):(\d+):)|((\S.*):(\d+):)) (((\S.*)? )?(error)): (.*)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(((\S.*):(\d+):)) ([^(warning)])(.*)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(\S.*)(\(\S.*\+\S.*\)): (undefined reference to) (.*)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^((\S.*)\.(c|cpp|h|inc|def|hpp))\s*:\s*(\d+)\s*:(?!(.*error:))(?!(.*warning:))(\s*\S.+)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(\[exec\])*\s*(from)\s*\S+\.\w+:\d+(:|,)\s*$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(\[exec\])*\s*(In file included from)\s*((.*\.(\w+)):(\d+)(:|,).*)$]]>
+		</expression>
+		<expression type="gcc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(\S.*(make:).*)|(.*\.\w+:\s*(In function).*:\s*)$]]>
+		</expression>
+		
+		<expression type="ncverilog" loglevel="warning" prevline="3" nextline="3">
+			<![CDATA[^(.*)(\\*W,)(.*)$]]>
+		</expression>
+		<expression type="ncverilog" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(.*)(\\*(F|E),)(.*)$]]>
+		</expression>
+		<expression type="msvc" loglevel="error" prevline="3" nextline="3">
+			<![CDATA[^(((\S.*)\((\d+)(,\s*(\d+))?\))|(\S.*))\s?: (((\S.*)? )?(error)) (\S+\d+)\s?:\s?(.*)$]]>
+		</expression>
+		<expression type="msvc" loglevel="warning" prevline="3" nextline="3">
+			<![CDATA[^(((\S.*)\((\d+)(,\s*(\d+))?\))|(\S.*))\s?: (((\S.*)? )?(warning)) (\S+\d+)\s?:\s?(.*)$]]>
+		</expression>
+		<expression type="javac" loglevel="warning" prevline="1" nextline="5">
+			<![CDATA[(\s*[javac]\s*.):(\d+):(\s?)(warning):(.*)]]>
+		</expression>
+		<expression type="javac" loglevel="warning" prevline="1" nextline="5">
+			<![CDATA[(\s*[javac]\s*.):(\d+):(\s?)(警告)(.*)]]>
+		</expression>
+		
+		<expression type="javac" loglevel="error" prevline="1" nextline="5">
+			<![CDATA[(\s*)(\d+)(BUILD FAILED)]]>
+		</expression>
+		<expression type="javac" loglevel="error" prevline="1" nextline="5">
+			<![CDATA[(\s*[javac]\s*.):(\d+):(\s?)(?!.*?(warning:|警告))(.*)]]>
+		</expression>
+		<expression type="javac" loglevel="error" prevline="1" nextline="5">
+			<![CDATA[^BUILD FAILED(.*)]]>
+		</expression>
+		<expression type="armcc" loglevel="warning" prevline="0" nextline="1">
+			<![CDATA[(\s*)(\d+):(\s?)(warning):(.*)]]>
+		</expression>
+		<expression type="armcc" loglevel="error" prevline="0" nextline="1">
+			<![CDATA[(\s*)(\d+):(\s?)(error):(.*)]]>
+		</expression>
+	</tool>
+	<tool name="test">
+		<expression type="junit" loglevel="error" prevline="3" nextline="5">
+			<![CDATA[\*error]]>
+		</expression>
+		<expression type="cunit" loglevel="warning" prevline="3" nextline="5">
+			<![CDATA[[javac] E:\java\cvs(icp_jdk)\src\main\com\huawei\icp\baseinfo\hr\HRBaseInfoService.java:24: warning: unmappable]]>
+		</expression>
+	</tool>
+</regex>

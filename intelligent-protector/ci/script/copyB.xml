@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project default="default">
+   <property name="baseDir" value="../../../../"/>
+   <property name="rootFiles" location="D:/temp"/>
+   <property name="ut" location="${baseDir}/RDV2R1C10/Agent/test/src/src"/>
+   
+<target name="default">
+    <antcall target="copyConfig"/>
+</target>
+
+<target name="copyConfig">
+	<copy todir="${ut}" overwrite="true">
+		<fileset dir="${rootFiles}/agent1" />
+	</copy>
+	
+</target>
+	
+</project>

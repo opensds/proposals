@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\open_src\snmp++\src\common.mk">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.aix5">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.am">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.bcc">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.dunix">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.gcc_solaris">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.hpux11">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.in">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.linux">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\src\Makefile.solaris">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\include\snmp_pp\config_snmp_pp.h.in">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\include\snmp_pp\Makefile.am">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\..\..\open_src\snmp++\include\snmp_pp\Makefile.in">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\address.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\asn1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\auth_priv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\counter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\ctr64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\eventlist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\eventlistholder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\gauge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\idea.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\integer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\IPv6Utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\md5c.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\mp_v3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\msec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\msgqueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\notifyqueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\octet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\oid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\pdu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\reentrant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\sha.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\snmpmsg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\target.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\timetick.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\usm_v3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\uxsnmp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\v3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\open_src\snmp++\src\vb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\address.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\asn1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\auth_priv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\collect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\config_snmp_pp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\counter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\ctr64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\eventlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\eventlistholder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\gauge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\idea.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\integer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\IPv6Utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\md5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\mp_v3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\msec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\msgqueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\notifyqueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\octet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\oid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\oid_def.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\pdu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\reentrant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\sha.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\smi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\smival.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\snmp_pp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\snmperrs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\snmpmsg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\target.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\timetick.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\usm_v3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\uxsnmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\v3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\open_src\snmp++\include\snmp_pp\vb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

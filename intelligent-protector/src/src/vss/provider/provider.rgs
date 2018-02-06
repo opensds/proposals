@@ -1,0 +1,27 @@
+HKCR
+{
+	rdvss.provider.1 = s 'provider Class'
+	{
+		CLSID = s '{0A267F0B-08BB-461B-9EE4-174579645F85}'
+	}
+	rdvss.provider = s 'provider Class'
+	{
+		CLSID = s '{0A267F0B-08BB-461B-9EE4-174579645F85}'
+		CurVer = s 'rdvss.provider.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {0A267F0B-08BB-461B-9EE4-174579645F85} = s 'provider Class'
+		{
+			ProgID = s 'rdvss.provider.1'
+			VersionIndependentProgID = s 'rdvss.provider'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{1FF073AC-1FB7-4710-9EC9-8D8FAA950280}'
+		}
+	}
+}

@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ciConfig version="1.0">
+    <!--
+                ================================"此配置文件中使用相对路径时的规则"=====================================
+                所有相对路径从子系统名称开始，子系统名称指scm.xml中配置的svn或cc节点的name属性值，此名称在配置库上不存在。
+                =======================================================================================================
+            run.analyse.with.baseCode 配置是否要生成基于代码的差异报告
+                run.analyse.with.baseReport是否要生成基于基线报告的差异报告。
+                        注1： 如果不配，这两个值都会默认为true 。
+                        注2： 基线报告需要放到配置所在的配置库中与conf平级的basereports目录里（创建basereports时，请注意区分大小写）。
+                plugin.pclint.runEA　用于配置执行pclint时，是否使用EA. 默认为false
+                run.compile.maxErrorNumber和run.compile.maxWarningNumber用于配置编译后解析错误与警告的最大个数，超过该数目将显示为大于该值，可以不配，默认值为100。
+                run.compile.userRegexfile用于自定义用户的解析编译输出中的错误与警告的正则表达式文件（填写以CI为根目录的相对路径）;不配置或配置为空串，会使用系统内置的regex.xml。
+                
+                robocopy.exclude和rsync.exclude分别用于配置robocopy和rsync的过滤条件，Windows Agent默认使用robocopy，Linux Agent使用rsync，多个过滤条件间以英文分号分隔，不配置时(配置为空格或者配置为空)，默认过滤.svn、.hg的文件夹。配置规则:      
+                1、在所有目录下，过滤特定文件夹PIN，则配置为"PIN"；                2、过滤指定文件夹subsystem1/source/PIN，则配置为"subsystem1/source/PIN"(此为相对路径配置方式)；         
+                3、在所有目录下，过滤所有txt类型的文件，则配置为"*.txt"；                
+                4、在所有目录下，过滤指定文件Tool.java，则配置为"*Tool.java"；
+                5、过滤指定目录下的指定文件subsystem1/source/cpp/src/MoneyApp.cpp,则配置为"subsystem1/source/cpp/src/MoneyApp.cpp"。                  
+    -->
+    <baseproperties>
+        <property name="run.analyse.with.baseCode"
+                  value="true" />
+        <property name="run.analyse.with.baseReport"
+                  value="true" />
+        <property name="plugin.pclint.runEA"
+                  value="false" />
+        <property name="run.compile.maxErrorNumber"
+                  value="500" />
+        <property name="run.compile.maxWarningNumber"
+                  value="1000" />
+       <!-- <property name="plugin.checkstyle.ruleSetFile"
+                  value="/checkstyle_ruleset_minimal.xml" />
+        <property name="plugin.pmd.ruleSetFile"
+                  value="rule/pmd_ruleset_minimal.xml" -->
+       <property name="run.compile.userRegexfile"
+                  value="compileRegex/regex.xml" />
+        <!--property name="run.findbugs.includeFilter" value="rule/findbugs.xml" /-->
+        <property name="robocopy.exclude"
+                  value=".svn;.hg" />
+        <property name="rsync.exclude"
+                  value=".svn;.hg" />
+    </baseproperties>
+    <!-- ================================"此配置文件中使用相对路径时的规则"=====================================
+                    1.所有相对路径从子系统名称开始，子系统名称指scm.xml中配置的svn或cc节点的name属性值，此名称在配置库上不存在。
+    -->
+    <!-- "编译任务" -->    
+    <compiles>
+        <!-- "支持重定向日志输出，使用directionallogfile属性可以指定输出的日志文件的位置" -->    
+        <compile name="CompileAgent_Sapmle"
+              layerPath="/CompileAgent_Suse10"
+              compiler="gcc"
+              compileFilePath="ciconfig/CI/script/compile/nowindows"
+              compileFile="V2R1_Agent_compile.sh"
+              isCreateCoverityFile="false"
+              compileParam="">
+        </compile>
+
+        <!-- CodeDex Start -->
+         <compile name="codeDexFortifyCompile"
+              layerPath="/codeDexCoverityCompile"
+              compiler="gcc"
+              compileFilePath="ciconfig/CI/script/codedex"
+              compileFile="fortify_compile.sh"
+              isCreateCoverityFile="false"
+              compileParam="">
+        </compile>
+        <!-- CodeDex End -->
+    </compiles>
+  
+    <!-- "自定义任务" -->
+    <customTasks>       
+        <task name="GetAgentSVNNumberNoWindows"
+              plugin="customtask"
+              layerPath="/GetAgentSVNNumberNoWindows"
+              workingDir="ciconfig/CI/script/compile/nowindows"
+              executable="V2R1_GetSVN_Number.sh"
+              argParam=""
+              echo="GetAgentSVNNumberNoWindows">
+          <params></params>
+        </task>
+        
+        <task name="GetAgentSVNNumberNoWindowsCodebin"
+              plugin="customtask"
+              layerPath="/GetAgentSVNNumberNoWindowsCodebin"
+              workingDir="ciconfig/CI/script/compile/nowindows"
+              executable="V2R1_GetSVN_Number_Codebin.sh"
+              argParam=""
+              echo="GetAgentSVNNumberNoWindowsCodebin">
+          <params></params>
+        </task>
+        
+        <task name="GetAgentSVNNumberWindows"
+              plugin="customtask"
+              layerPath="/GetAgentSVNNumberWindows"
+              workingDir="ciconfig/CI/script/compile/windows"
+              executable="V2R1_GetSVN_Number.bat"
+              argParam=""
+              echo="GetAgentSVNNumberWindows">
+          <params></params>
+        </task>
+        
+        <task name="GetAgentSVNNumberWindowsCodebin"
+              plugin="customtask"
+              layerPath="/GetAgentSVNNumberWindowsCodebin"
+              workingDir="ciconfig/CI/script/compile/windows"
+              executable="V2R1_GetSVN_Number_Codebin.bat"
+              argParam=""
+              echo="GetAgentSVNNumberWindowsCodebin">
+          <params></params>
+        </task>
+        
+        <task name="CpNoWindowsPkg"
+              plugin="customtask"
+              layerPath="/CpNoWindowsPkg"
+              workingDir="ciconfig/CI/script/compile/nowindows"
+              executable="V2R1_CPNoWindowsPkg.sh"
+              argParam=""
+              echo="CpNoWindowsPkg">
+          <params></params>
+        </task>
+        
+        <task name="CpNoWindowsPkgCodebin"
+              plugin="customtask"
+              layerPath="/CpNoWindowsPkgCodebin"
+              workingDir="ciconfig/CI/script/compile/nowindows"
+              executable="V2R1_CPNoWindowsPkg_Codebin.sh"
+              argParam=""
+              echo="CpNoWindowsPkgCodebin">
+          <params></params>
+        </task>
+        
+        <task name="CpWindowsPkg"
+              plugin="customtask"
+              layerPath="/CpWindowsPkg"
+              workingDir="ciconfig/CI/script/compile/windows"
+              executable="V2R1_CPWindowsPkg.bat"
+              argParam=""
+              echo="CpWindowsPkg">
+          <params></params>
+        </task>
+        
+        <task name="CpWindowsPkgCodebin"
+              plugin="customtask"
+              layerPath="/CpWindowsPkgCodebin"
+              workingDir="ciconfig/CI/script/compile/windows"
+              executable="V2R1_CPWindowsPkg_Codebin.bat"
+              argParam=""
+              echo="CpWindowsPkgCodebin">
+          <params></params>
+        </task>
+        
+        <task name ="componentBcrRevGenerateTask"  plugin="componentBcrRevGenerate"  layerPath="/componentBcrRevGenerate" >
+            <params>
+               <!-- codeRoot: scmInfo.xml文件路径（一般配置value值为空，插件支持默认scmInfo.xml文件路径，插件也支持用户自己指定scmInfo.xml文件路径（这种情况适用于没有黄区权限），自定义路径时，{COOD_ROOT代表current目录}）-->
+               <param name="codeRoot" value=" "/>
+               <!-- binaryComponentFile：组件树xml文件路径（是componentdownload插件的输出文件）-->
+               <param name="binaryComponentFile" value="/home/icp/Agent/RD_V200R001C00_Agent_Codebin/code/current/componentTree.xml"/>
+               <!-- softwareVersion：软件版本号（value值可以为空, 不指定时由CI获取，写入XML文件），其值的获得见补充说明，也支持填写文件路径-->
+               <param name="softwareVersion" value="OceanStor ReplicationDirector V200R001C00"/>
+               <!-- mksidDir：搜索 .mksid文件的路径（value值可以为空，默认是${CODE_Root},搜索下载的整个代码，${CODE_Root}参数的具体含义会在补充说明中解释）-->
+               <param name="mksidDir" value=""/>
+               <!-- outputFile：插件输出组件版本树xml结果文件的路径。-->
+               <param name="outputFile" value="/home/icp/CodeBin/BcrRev.xml" />     
+            </params>
+        </task>
+        
+        <task name="scanBinaryFileTask" plugin="binaryscan" layerpath="/binaryscan">
+            <params>
+                <param name="almProject" value="OceanStor ReplicationDirector V200R001C00"/>
+                <param name="scandir" value="Agent"/>
+                <param name="applylistdir" value="ciconfig/CI/conf/applylist.xls"/>
+                <param name="standardlistdir" value="ciconfig/CI/conf/standardlist.xlsx"/>
+                <param name="savereportdir" value=""/>
+                <param name="language" value="Chinese"/>
+                <param name="userid" value="w90006164"/>
+            </params>
+        </task>
+
+        <task name ="componentuploadTask" plugin="componentupload" layerPath="/componentupload" >
+            <params>   
+               <!--上传组件路径,文件为componentBcrRevGenerate插件的输出文件-->
+               <param name="inputDir" value="/home/icp/CodeBin/BcrRev.xml"/>
+               <param name="outputDir" value="/home/icp/CodeBin/vmp.xml"/>
+               <param name="account" value="w90006164"/>
+            </params>
+        </task>
+        
+        <task name="pigeonholebinTask" plugin="pigeonholebin" layerPath="/pigeonholebin">
+            <params>
+                <param name="vmpXmlPath" value="/home/icp/CodeBin/vmp.xml"/>
+                <param name="itemCodes" value="all"/>
+                <param name="binFileRootPath" value=" "/>
+                <param name="userAccount" value="china\w90006164"/>
+                <param name="userPassword" value="11f2130113d6bae82364334e06706aae"/>
+            </params>
+        </task>
+        
+        <task name="CopyPkgForCodebin"
+              plugin="customtask"
+              layerPath="/CopyPkgForCodebin"
+              workingDir="ciconfig/CI/script/action"
+              executable="V2R1_CpPkgForCodebin.sh"
+              argParam=""
+              echo="CopyPkgForCodebin">
+          <params></params>
+        </task>
+        
+        <task name="copyFileAgent" plugin="copyFile" layerPath="/copyFileAgent">
+           <params>
+             <param name="username" value="w90006164"/>
+             <param name="pwd" value="7e96a7064864be056f1555d5f2c0b90f"/>   
+             <param name="filename" value="/home/icp/Agent/RD_V200R001C00_Agent_Codebin/code/current/bcrTree.xml"/>   
+             <param name="otherXml" value=""/>     
+             <param name="vmpDestPath" value="/home/compareCode/"/>  
+             <param name="type" value="1"/>       
+           </params>
+        </task>
+        
+        <task name="copyPkgToCompareFromALM"
+              plugin="customtask"
+              layerPath="/copyPkgToCompareFromALM"
+              workingDir="ciconfig/CI/script/codebin"
+              executable="copyPkgToCompareFromALM.sh"
+              argParam=""
+              echo="copyPkgToCompareFromALM">
+          <params></params>
+        </task>
+        
+        <task name="copyPkgToCompareFromCompile"
+              plugin="customtask"
+              layerPath="/copyPkgToCompareFromCompile"
+              workingDir="ciconfig/CI/script/codebin"
+              executable="copyPkgToCompareFromCompile.sh"
+              argParam=""
+              echo="copyPkgToCompareFromCompile">
+          <params></params>
+        </task>
+        
+        <task name ="compareBinaryAgent" plugin="compareBinary">
+          <params>
+             <param name="vmpBinary" value="D:\codebin\alm"/>  
+             <param name="buildResult" value="D:\codebin\compile"/>    
+             <param name="splitTail" value="so#dll#sig#exe"/>     
+             <param name="isBinaryFile" value="false"/>       
+           </params>
+           <release>
+                <include name="release/report.zip"/>
+           </release>
+        </task>
+
+
+        <!-- CodeDex Start -->
+        <task name="codeDexClean"
+              plugin="customtask"
+              layerPath="/codeDexClean"
+              workingDir="ciconfig/CI/script/codedex"
+              executable="CodeCC_Clean.sh"
+              argParam=""
+              echo="codeDexClean">
+          <params></params>
+        </task>
+
+        <task name="codeDexCoverityCompile"
+              plugin="customtask"
+              layerPath="/codeDexCoverityCompile"
+              workingDir="ciconfig/CI/script/codedex"
+              executable="coverity_log.sh"
+              argParam=""
+              echo="codeDexCoverityCompile">
+          <params></params>
+        </task>
+
+        <task name="codeDexKlocworkCompile"
+              plugin="customtask"
+              layerPath="/codeDexKlocworkCompile"
+              workingDir="ciconfig/CI/script/codedex"
+              executable="klocwork_build_log.sh"
+              argParam=""
+              echo="codeDexKlocworkCompile">
+          <params></params>
+        </task>
+
+        <task name="codeDexUpload"
+              plugin="CodeDEX"
+              layerPath="/codeDexUpload"
+              argParam=""
+              echo="codeDexKlocworkCompile">
+          <params>
+            <param name="iscompile" value="false"/>
+            <!-- TODO -->
+            <param name="tqeinputdir" value="/opt/codeDex/tmp"/>
+            <param name="compileos" value="linux64"/>
+            <param name="mailto" value="zwx373611"/>
+            <param name="language" value="c++" />
+            <param name="checkrules" value="coverity,fortify,klocwork"/>
+            <param name="isincremental" value="false"/>
+          </params>
+        </task>
+        <!-- CodeDex End -->
+
+
+        <!-- Pre Static Check Start -->
+        <task name="unzipOpenSrc"
+              plugin="customtask"
+              layerPath="/unzipOpenSrc"
+              workingDir="Agent/build/ms"
+              executable="agent_prepare.bat"
+              argParam=""
+              echo="unzipOpenSrc">
+          <params></params>
+        </task>
+		
+		<task name="unzipOpenSrcPrivate"
+              plugin="customtask"
+              layerPath="/unzipOpenSrcPrivate"
+              workingDir="RDAgent_V2R1_Code/build/ms"
+              executable="agent_prepare.bat"
+              argParam=""
+              echo="unzipOpenSrc">
+          <params></params>
+        </task>
+
+        <task name="makeSqlite"
+              plugin="customtask"
+              layerPath="/makeSqlite"
+              workingDir="ciconfig/CI/script/"
+              executable="MakeSqlite3ForPclint.bat"
+              argParam=""
+              echo="makeSqlite">
+          <params></params>
+        </task>
+        <!-- Pre Static Check End -->
+
+        <!-- Static Check Start -->
+        <!--
+           <task name="metricAgent" plugin="metric" layerPath="/metricAgent">
+            <params>
+                <param name="excludepath" value="" />
+                param name="projectdir" value="code/src/Server/RD-Server-Plat;code/src/Server/Lego;code/src/Server/UBase;code/src/WebUI/RD-UI-Plat" /
+                <param name="projectdir" value="Agent\src" />
+                <param name="baselinedir" value="" />
+                <param name="language" value="c++" />
+                <param name="fileexts" value="*.h;*.c;*.cpp" />
+            </params>
+        </task>
+        
+        <task name="CsecCheckAgent" plugin="CsecCheck" layerPath="/CsecCheckAgent" >
+              <params>
+                 <param name="language" value="c++"/>
+                 <param name="pathRefidOfSources" value="path.Csec_Check_Agent"/>
+                 <param name="whetherReport" value="false"/>
+              </params>
+        </task>
+        -->
+        <task name="metricAgent" 
+              plugin="metric" 
+              layerPath="/Static/metric">
+            <params>
+                <param name="excludepath" value="" />
+                <!--param name="projectdir" value="code/src/Server/RD-Server-Plat;code/src/Server/Lego;code/src/Server/UBase;code/src/WebUI/RD-UI-Plat" /-->
+                <param name="projectdir" value="Agent/src" />
+                <param name="baselinedir" value="" />
+                <param name="language" value="c++" />
+                <param name="fileexts" value="*.h;*.c;*.cpp" />
+            </params>
+        </task>
+        
+        <task name="CsecCheckAgent" 
+              plugin="CsecCheck" 
+              layerPath="/Static/CsecCheck" >
+              <params>
+                 <param name="language" value="c++"/>
+                 <param name="pathRefidOfSources" value="path.Csec_Check_Agent"/>
+                 <param name="whetherReport" value="false"/>
+              </params>
+        </task>
+    
+        <task name="MolintAgent" 
+              plugin="Molint" 
+              layerPath="/Static/Molint">
+              <!-- layerPath="/UltraAgent" -->
+              <params>
+                 <param name="compliescript" value="ciconfig/CI/script/build/ms/agent_make.bat"/>
+              </params>
+        </task>
+        
+        <task name="cctAgent" 
+              plugin="cct" 
+              layerPath="/Static/cct" >
+              <params>
+                <param name="language" value="c++"/> 
+                <param name="fileexts" value="*.c;*.cpp;*.h;*.hpp;*.sh;*.bat;*.cmd;*.ps1;*.ps;"/>
+                <param name="pathRefidOfSources" value="path.code.UltraAgent"/>
+                <param name="pathRefidOfHistorySources" value="path.code.UltraAgentCCTOrg"/>
+                <param name="isTestCode" value="no"/>
+              </params>
+        </task>
+    
+        <task name="simianAgent" 
+              plugin="simian" 
+              layerPath="/Static/simian" >
+          <params>
+            <param name="srcDir" value="ciconfig/src"/>
+          </params>
+        </task>
+    
+        <task name="inFusionAgent" 
+              plugin="inFusion" 
+              layerPath="/Static/inFusion" >
+            <params>
+              <param name="language" value="cpp"/>
+              <param name="path" value="ciconfig/src"/>
+            </params>
+        </task>
+    
+        <!--task name="pclintAgent" 
+              plugin="pclint" 
+              layerPath="/Static/pclint" >
+              <params>
+                 <param name="workingdir" value="C:/windows_buildcloud-agent/plugins/pclint/tool"/>
+                 <param name="sourcesPathRefID" value="path.code.UltraAgentPCLINT"/>
+                 <param name="lnt" value="C:/windows_buildcloud-agent/plugins/pclint/tool/agentv2r1c00.lnt"/>
+                 <param name="runDistributed" value="false"/>
+                 <param name="xmlEncoding" value="UTF-8"/>
+              </params>
+        </task-->
+    
+        <task name="sourcemonitorAgent" 
+              plugin="sourcemonitor" 
+              layerPath="/Static/sourcemonitor" >
+            <params>
+              <param name="sourcedirs" value="ciconfig/src/src"/>
+            </params>
+        </task>
+        <!-- Static Check End   -->
+    </customTasks>
+    
+    <packages>
+        <package name="CompileAgent_Suse11"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package>
+        
+        <!--package name="CompileAgent_Suse11_Codebin"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile_Codebin.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package-->
+        
+        <package name="compile_Agent_Windows"
+                 workingDir="Agent/build/ms"
+                 executable="agent_pack.bat"
+                 argParam="">
+            <result miniSize="">
+                <include name="Agent/build/ms/package/OceanStor*_Agent-*.zip" />
+            </result>
+        </package>
+        
+        <package name="CompileAgent_Suse10"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package>
+        
+        <!--package name="CompileAgent_Suse10_Codebin"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile_Codebin.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package-->
+        
+        <package name="CompileAgent_NoWindows"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package>
+        
+        <package name="CompileAgent_NoWindows_Codebin"
+                 workingDir="ciconfig/CI/script/compile/nowindows"
+                 executable="V2R1_Agent_compile_Codebin.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="AGENT_PACK_TEMP/OceanStor*_Agent-*.tar.gz" />
+            </result>
+        </package>
+        
+        <package name="ReleasePackage"
+                 workingDir="ciconfig/CI/script/action"
+                 executable="V2R1_CpPkg.sh"
+                 argParam="">
+            <result miniSize="">
+                <include name="*_eReplication_Agent.zip" />
+            </result>
+        </package>
+    </packages>
+  
+    <ruleSet>
+        <pclint defaultLntFile="Agent/ci/rule/pclint/agent.lnt" 
+                defaultEnv="PCLINT_PATH=C:/windows_buildcloud-agent/plugins/pclint/tool;" >
+            <module name="AgentModule_FOR_PCLINT" lntFile="Agent/ci/rule/pclint/agent.lnt" 
+                    env="PCLINT_PATH=C:/windows_buildcloud-agent/plugins/pclint/tool;" />
+        </pclint>
+    </ruleSet>
+</ciConfig>

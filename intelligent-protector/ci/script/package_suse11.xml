@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ciCloudJob>
+		<!--"
+			1.所有agentTask并发执行
+			2.agentTask下的所有task顺序执行
+			3.compile和package任务使用name属性配置在CIConfig.xml中定义的任务
+			4.静态检查任务(cct/pclint/sourcemonitor/simian)使用module属性配置在ModuleConfig.xml中定义的模块名称
+			5.配置文件中的标签，属性名，值不能包含有中文
+			6.支持使用priority参数定义任务优先级，优先级从0～10依次升高，若不定义，默认为0.
+			7.支持使用timeoutMinutes参数指定该任务的超时时间，单位分钟。若不设置，或者设置的值小于等于0，或者设置的值不是数值，则认为不超时。
+			8.支持使用retryTimesWhenTimeout参数指定任务超时后任务的重试次数。不设置则不重试。
+			"-->
+		<!--env="env-redhat5.6"这个参数是在ProductConfig.xml定义，与Agent的template相关联-->
+		<agentTask env="env-suse11"  timeoutMinutes="" retryTimesWhenTimeout="3">
+		<!--plugin="customtask"是插件名称，无须改动，name="Compile_T_V2R2"是在CIConfig.xml定义,这里是name-->
+			<task plugin="customtask" name="PackageAgent_Linux" depends="" />				
+		</agentTask>
+</ciCloudJob>
+
+
+

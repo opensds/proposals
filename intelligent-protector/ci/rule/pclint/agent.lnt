@@ -1,0 +1,68 @@
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+//agent pclintInc检查配置文件
+//声明：每种C/C++编译器都有自己的特点和环境，因此需要为每个C/C++编译器定义一套*.lnt选项文件，
+//以往的lint说明都是针对某种特定编译环境，作者又不说明，造成B环境使用A环境的选项文件，
+//往往存在不匹配问题，修改和诊断复杂。目前，网上流传的lint使用方法和选项文件多是一些高手
+//现在加上中文注释，并整理成有层次的选项文件，按照功能分类，使用者只需按照说明，适当修改即可。
+//由于所有的选项都集中在这个文件中，所以在Source Insight中只需要
+//Custom Command Run: D:\ICP_CI_Windows_Master\plugins\pclintInc\tool\lint-nt.exe D:\ICP_CI_Windows_Master\plugins\pclintInc\tool\agent.lnt %f
+//Pattern:      ^Error\s\([\\\sa-zA-Z:].*\)\s\([0-9]+\).*
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+ 
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+// ☆2.系统编译配置区，系统定制配置区
+gcc410.lnt
+co-gcc.lnt                  // gcc版本>=2.95.3，必须对应linux头文件
+                            // ★切勿使用安装时的8.0h版本co-gnu3.lnt
+lib-stl.lnt             // PC-lint options for the STL(Standard Template Library)
+env-xml.lnt
+options.lnt
+
++DLINUX
++DWITH_OPENSSL
++DWSEC_ERR_CODE_BASE
+
+// ☆3.工程定制选项 
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+// ☆3.工程编译配置区
+// 头文件包含：先#include "..."再#include <...>
+// -系统头文件：为与STL配合，头文件上层目录必须为include
+// -显示系统头文件包含顺序：touch empty.c;g++ -c -v empty.c
+-i"%PCLINT_PATH%\SUSE11\usr\include\c++\4.3"
+-i"%PCLINT_PATH%\SUSE11\usr\include\c++\4.3\x86_64-suse-linux"
+-i"%PCLINT_PATH%\SUSE11\usr\include\c++\4.3\backward"
+
+-i"%PCLINT_PATH%\SUSE11\usr\local\include"
+-i"%PCLINT_PATH%\SUSE11\usr\lib64\gcc\x86_64-suse-linux\4.3\include"
+-i"%PCLINT_PATH%\SUSE11\usr\x86_64-suse-linux\include"
+-i"%PCLINT_PATH%\SUSE11\usr\include"
+-i"%PCLINT_PATH%"
+//-i"D:\VC\include"
+
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+//工程头文件路径，示具体工程目录修改
+-i"%CODE_PATH%\Agent\src\inc"
+-i"%CODE_PATH%\Agent\open_src"
+-i"%CODE_PATH%\Agent\open_src\openssl\inc32"
+-i"%CODE_PATH%\Agent\open_src\sqlite"
+-i"%CODE_PATH%\Agent\open_src\snmp++\include"
+-i"%CODE_PATH%\Agent\open_src\snmp++"
+-i"%CODE_PATH%\Agent\open_src\tinyxml"
+-i"%CODE_PATH%\Agent\src\inc\securec"
+-i"%CODE_PATH%\Agent\src\inc\kmc"
+-i"%CODE_PATH%\Agent\src\chgauth\inc"
+-i"%CODE_PATH%\Agent\src\common\inc"
+-i"%CODE_PATH%\Agent\src\communication\inc"
+-i"%CODE_PATH%\Agent\src\hostinfo\inc"
+-i"%CODE_PATH%\Agent\src\monitor\inc"
+-i"%CODE_PATH%\Agent\src\rdagent\inc"
+-i"%CODE_PATH%\Agent\src\rdexec\inc"
+-i"%CODE_PATH%\Agent\src\rootcaller\inc"
+-i"%CODE_PATH%\Agent\src\router\inc"
+-i"%CODE_PATH%\Agent\src\writer\inc"
+-i"%CODE_PATH%\Agent\open_src\openssl\include"
+
+//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+//去掉__func__错误
+//-d__func__=___function___ // use Lint's built-in define

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TQEFilter>
+	<!--
+	FILE节点中配置需屏蔽的文件或目录的路径，路径为相对于CI中配置的工程路径。
+	CI配置的源代码路径为d:/users 其中FILE可以写成一下示例中
+	/test_resource_leak/test_resource_leak/test_resource_leak/no_leak1.cpp
+	（实际路径为d:/users/test_resource_leak/test_resource_leak/test_resource_leak/no_leak1.cpp去掉d:/users后的相对路径）
+	注意：路径请尽量复制，java的win平台的路径在这里是区分大小写的。
+	例如：win32平台的路径project.java不能写成大写的。大写的不能写成小写的。
+	
+	LIB节点 对应是第三方工具的告警，这里一般不会相对于你的源码路径，因此在写的时候可以写
+	/microsoft visual studio 9.0/vc/include/vector（一般可以把d:/program files去掉才有通用性，不然换个机器（盘符变化）编译就可能没法屏蔽了）
+	-->
+	<FILE name="Agent/open_src/"/>
+	<FILE name="Agent/platform/"/>
+    <!-- <FILE name="../../../../../usr/"/> -->
+	<LIB name="/usr/"/>
+</TQEFilter>

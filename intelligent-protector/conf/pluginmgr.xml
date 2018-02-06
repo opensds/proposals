@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Config>
+    <PluginList>
+        <Plugin name="liboracle" version="V200R001C00SPC100" service="oracle">
+        </Plugin>
+        <Plugin name="libdb2" version="V200R001C00SPC100" service="db2">
+        </Plugin>
+        <Plugin name="libhost" version="V200R001C00SPC100" service="host">
+        </Plugin>
+        <Plugin name="libdevice" version="V200R001C00SPC100" service="device">
+        </Plugin>
+        <Plugin name="libexchange" version="V200R001C00SPC100" service="exchange">
+        </Plugin>
+        <Plugin name="libcluster" version="V200R001C00SPC100" service="cluster">
+        </Plugin>
+        <Plugin name="libsqlserver" version="V200R001C00SPC100" service="sqlserver">
+        </Plugin>
+        <Plugin name="libapp" version="V200R001C00SPC100" service="app">
+        </Plugin>
+        <Plugin name="libcache" version="V200R001C00SPC100" service="cache">
+        </Plugin>
+        <Plugin name="libsybase" version="V200R001C00SPC100" service="sybase">
+        </Plugin>
+        <Plugin name="libhana" version="V200R001C00SPC100" service="hana">
+        </Plugin>
+    </PluginList>
+</Config>
+

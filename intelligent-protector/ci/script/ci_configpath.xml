@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--?xml version="1.0" encoding="GBK"?-->
+<!-- 由产品CMO配置此文件-->
+<projectconfig>
+	<!--产品信息key与value不能包含有中文-->
+   <baseconfig>
+		<!--product name-->
+		<property  key="product_name" value="ReplicationDirector Agent"/>
+		<!--product version-->
+		<property  key="product_version" value="V100R003C00"/>
+		<!--cicloudBuildType 1:teambuild/privatebuild,2:publishbuild-->
+		<property  key="cicloudBuildType" value="1"/>
+		<!--deleteOldCodeBeforeDown: is need to delete previous down code or config?true:need,false:no need-->
+		<property  key="deleteOldCodeBeforeDown" value="false"/>
+		<!-- resource access username, this value should match with "resource.ownerkey" defined in <Resource>/conf/resource.properties file -->
+		<property  key="resourceOwnerKey" value="ReplicationDirector"/>
+		<!-- resource access token, this value should match with "resource.accesstoken" defined in <Resource>/conf/resource.properties file -->
+		<property  key="resourceAccessToken" value="V100R002C10"/>
+		<!-- 若多个工程需要使用同一份源码，那么则引用一个相同的名字就可以了，codeShareName定义的就是这个名字 -->
+		<property  key="codeShareName" value=""/>
+		<!-- 自定义一些属性，执行编译时作为环境变量可以直接使用，环境变量名称前缀为"icp_",如在编译脚本中可以直接使用环境变量icp_Defined_Version -->
+		<property  key="Defined_Version" value="V100R003C00"/>
+		<!-- 生成publishScript自动化脚本和快照文件的开关，默认不生成 -->
+		<property  key="createPublishScriptAndSnapshot" value="false"/>
+		<!--支持用户定义自己的编译脚本退出时成功的值，一旦定义，若退出的返回值不等于设置的值就任务是编译失败
+		<property  key="checkScriptExitValue" value="true"/>
+		<property  key="scriptSuccessExitValue" value="0"/>
+		-->
+   </baseconfig>
+   <!-- 配置库属性名[key]不能有中文，如果配置库属性值[value]包含中中文，请确保此配置文件的编码设置:encoding="GBK"-->
+   <!-- 下载配置<svn>和<cc>节点上都支持3个属性：retryTimes retryIntervalMinutes deleteBeforeLastRetry-->
+   <!-- retryTimes表示下载失败的重试次数，不设置或者设置错误的值（如非数值或者负数等），则使用默认值3。注意若设置为0，则表示不重试。-->
+   <!-- retryIntervalMinutes表示两次重试之间的时间间隔，单位分钟，不设置或者设置错误的值（如非数值或者负数等），则使用默认值1。注意若设置为0，则表示重试时不用等待时间。-->
+   <!--deleteBeforeLastRetry表示最后一次重试前是否要删除原来的下载内容，不设置或者设置错误的值（除了true/false以外的值），则使用默认值false,表示不删除-->
+	<svn name="ciconfigpathxmlsnvname" retryTimes="3" retryIntervalMinutes="1" deleteBeforeLastRetry="false">
+		<property  key="svn_server_url" value="http://szxsvn16-rd:6801/svn/ITPL_RD_V1R3_SVN/V100R003C00/code/trunk/Agent/ci/CloudBuild"/>
+		 
+		<property  key="svn_name" value="w90006164"/>
+		<property  key="svn_password" value="ed0a0975fe83eb376f1555d5f2c0b90f"/>
+		<property  key="svn_revision" value=""/>  
+	</svn>
+   <!--若配置库为clearcase，请使用如下格式的配置，并删除掉上面关于svn的配置。-->
+</projectconfig>

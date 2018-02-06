@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F7059DE6-6006-4948-9909-C5A8EE14EF62}</ProjectGuid>
+    <RootNamespace>common</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\..\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>libcommon</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\..\..\bin\</OutDir>
+    <TargetName>libcommon</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\..\..\bin\</OutDir>
+    <TargetName>libcommon</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\..\..\bin\</OutDir>
+    <TargetName>libcommon</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\..\src\inc;..\..\..\src\inc\kmc;..\..\..\src\inc\securec;..\..\..\open_src\openssl\inc32;..\..\..\open_src\tinyxml</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;AGENT_DLL_EXPORTS</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4273;4251</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>tinyxml.lib;libeay32.lib;securec.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\bin\;..\..\..\open_src\openssl\out32</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\..\src\inc;..\..\..\src\inc\kmc;..\..\..\src\inc\securec;..\..\..\open_src\openssl\inc32;..\..\..\open_src\tinyxml</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;AGENT_DLL_EXPORTS</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4273;4251</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\..\..\bin\;..\..\..\open_src\openssl\out32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>tinyxml.lib;libeay32.lib;securec.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\src\inc;..\..\..\src\inc\kmc;..\..\..\src\inc\securec;..\..\..\open_src\openssl\inc32;..\..\..\open_src\tinyxml</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;AGENT_DLL_EXPORTS</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>4273;4251</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>..\..\..\bin\;..\..\..\open_src\openssl\out32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>tinyxml.lib;libeay32.lib;securec.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\src\inc;..\..\..\src\inc\kmc;..\..\..\src\inc\securec;..\..\..\open_src\openssl\inc32;..\..\..\open_src\tinyxml;..\..\..\platform\kmc;..\..\..\platform\kmc\include;..\..\..\platform\kmc\src\sdp</AdditionalIncludeDirectories>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <PreprocessorDefinitions>WIN32;AGENT_DLL_EXPORTS;WSEC_ERR_CODE_BASE=0</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4273;4251</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>..\..\..\bin\;..\..\..\open_src\openssl\out32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>tinyxml.lib;libeay32.lib;securec.lib;libsdp.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\inc\common\AgentException.h" />
+    <ClInclude Include="..\..\..\src\inc\common\AppVersion.h" />
+    <ClInclude Include="..\..\..\src\inc\common\ConfigXmlParse.h" />
+    <ClInclude Include="..\..\..\src\inc\common\CryptAlg.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Defines.h" />
+    <ClInclude Include="..\..\..\src\inc\common\ErrorCode.h" />
+    <ClInclude Include="..\..\..\src\inc\common\File.h" />
+    <ClInclude Include="..\..\..\src\inc\common\FileSearcher.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Ip.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Log.h" />
+    <ClInclude Include="..\..\..\src\inc\common\LogCode.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Mac.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Password.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Path.h" />
+    <ClInclude Include="..\..\..\src\inc\common\RootCaller.h" />
+    <ClInclude Include="..\..\..\src\inc\common\ServiceHandler.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Sign.h" />
+    <ClInclude Include="..\..\..\src\inc\common\String.h" />
+    <ClInclude Include="..\..\..\src\inc\common\SystemExec.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Thread.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Time.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Types.h" />
+    <ClInclude Include="..\..\..\src\inc\common\UniqueId.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Utils.h" />
+    <ClInclude Include="..\..\..\src\inc\common\Uuid.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\src\common\ConfigXmlParse.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\CryptAlg.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\File.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\FileSearcher.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Ip.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Log.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Mac.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Password.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Path.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\RootCaller.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\ServiceHandler.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Sign.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\String.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\SystemExec.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Thread.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Time.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\UniqueId.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Utils.cpp" />
+    <ClCompile Include="..\..\..\src\src\common\Uuid.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
